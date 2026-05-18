@@ -325,7 +325,7 @@ function LaporanPelajarContent({
                   />
                 }
                 fileName={`Laporan_${pelajarInfo.NamaPelajar}_${MONTH_OPTIONS[bulan - 1]}_${tahun}.pdf`}
-                className="bg-blue-900 text-white px-4 py-2 rounded text-sm hover:bg-gray-200 flex items-center gap-1"
+                className="bg-blue-900 text-white px-4 py-2 rounded text-sm hover:hover:bg-blue-800 flex items-center gap-1"
               >
                 {({ loading: pdfLoading }) =>
                   pdfLoading ? "Menjana..." : "📄 Muat Turun PDF"
