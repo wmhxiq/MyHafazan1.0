@@ -1,6 +1,7 @@
 import NextAuth from 'next-auth'
 import Credentials from 'next-auth/providers/credentials'
 import { createClient } from '@supabase/supabase-js'
+import { verifyPassword } from '@/lib/password'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -47,7 +48,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             .single()
 
           if (error || !data) return null
-          if (data.KataLaluan !== password) return null
+
+          // ✅ Use bcrypt to verify instead of plain text comparison
+          const isValid = await verifyPassword(password, data.KataLaluan)
+          if (!isValid) return null
+
+          //if (data.KataLaluan !== password) return null
 
           return {
             id: String(data.IDGuru),

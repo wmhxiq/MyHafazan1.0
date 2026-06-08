@@ -5,6 +5,7 @@ import MonthPicker from "@/app/components/MonthPicker";
 import { supabase } from "@/lib/supabase";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { IconEdit, IconTrash } from "@/app/components/icons";
 
 type RekodGroup = {
   Tarikh: string;
@@ -217,13 +218,13 @@ export default function RekodHafazanList() {
                         }
                         className="bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200 text-xs"
                       >
-                        ✏️
+                        <IconEdit />
                       </button>
                       <button
                         onClick={() => deleteRekod(rekod.Tarikh)}
                         className="bg-red-100 text-red-700 px-2 py-1 rounded hover:bg-red-200 text-xs"
                       >
-                        🗑️
+                        <IconTrash />
                       </button>
                     </td>
                   </tr>

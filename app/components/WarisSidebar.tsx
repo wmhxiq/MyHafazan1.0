@@ -21,6 +21,16 @@ export default function WarisSidebar() {
     { label: "REKOD KEMAJUAN", href: "/waris/rekod-kemajuan" },
   ];
 
+  function getInitials(name?: string) {
+    if (!name) return "?";
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase();
+  }
+
   return (
     <div className="flex flex-col justify-between w-52 h-screen sticky top-0 bg-blue-900 text-white p-4">
       <div>

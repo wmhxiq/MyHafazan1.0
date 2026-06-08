@@ -1,7 +1,23 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import AdminSidebar from "@/app/components/AdminSidebar";
 import { supabase } from "@/lib/supabase";
+import {
+  IconEdit,
+  IconSearch,
+  IconFilter,
+  IconPlus,
+  IconTrash,
+  IconChevronDown,
+  IconX,
+  IconSave,
+  IconBookOpen,
+  IconTarget,
+  IconUpload,
+  IconUsers,
+} from "@/app/components/icons";
+import MonthPicker from "@/app/components/MonthPicker";
 
 type TingkatanStat = {
   tingkatan: string;
@@ -31,6 +47,135 @@ const TINGKATAN_OPTIONS = [
   "TINGKATAN 5",
 ];
 
+// SVG Icons
+const UsersIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+    <circle cx="9" cy="7" r="4" />
+    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+  </svg>
+);
+
+const GraduationCapIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+    <path d="M6 12v5c3 3 9 3 12 0v-5" />
+  </svg>
+);
+
+const TrendingDownIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <polyline points="23 18 13.5 8.5 8.5 13.5 1 6" />
+    <polyline points="17 18 23 18 23 12" />
+  </svg>
+);
+
+const TrendingUpIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+    <polyline points="17 6 23 6 23 12" />
+  </svg>
+);
+
+const BarChartIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    color="white"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <line x1="12" y1="20" x2="12" y2="10" />
+    <line x1="18" y1="20" x2="18" y2="4" />
+    <line x1="6" y1="20" x2="6" y2="16" />
+  </svg>
+);
+
+const CalendarIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    color="indigo"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+    <line x1="16" y1="2" x2="16" y2="6" />
+    <line x1="8" y1="2" x2="8" y2="6" />
+    <line x1="3" y1="10" x2="21" y2="10" />
+  </svg>
+);
+
+const RefreshIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M23 4v6h-6" />
+    <path d="M1 20v-6h6" />
+    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10" />
+    <path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14" />
+  </svg>
+);
+
 export default function AdminDashboard() {
   const [data, setData] = useState<DashboardData>({
     jumlahPentadbir: 0,
@@ -40,86 +185,86 @@ export default function AdminDashboard() {
     mencapaiTotal: 0,
     melebihiTotal: 0,
     tingkatanStats: [],
-    displayMonth: " ",
+    displayMonth: "",
     displayYear: 0,
   });
+
+  const monthNames = [
+    "Januari",
+    "Februari",
+    "Mac",
+    "April",
+    "Mei",
+    "Jun",
+    "Julai",
+    "Ogos",
+    "September",
+    "Oktober",
+    "November",
+    "Disember",
+  ];
+
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState<number>(
+    new Date().getMonth(),
+  );
+  const [selectedYear, setSelectedYear] = useState<number>(
+    new Date().getFullYear(),
+  );
 
   useEffect(() => {
     fetchDashboard();
   }, []);
 
-  async function fetchDashboard() {
+  async function fetchDashboard(month?: number, year?: number) {
     setLoading(true);
 
     try {
-      // 1. Fetch Basic Data & The Latest Month available in RekodBulanan
-      const [guruRes, pentadbirRes, pelajarRes, kelasRes, latestMonthRes] =
-        await Promise.all([
-          supabase
-            .from("Staf")
-            .select("*", { count: "exact", head: true })
-            .eq("Peranan", "Guru"),
-          supabase
-            .from("Staf")
-            .select("*", { count: "exact", head: true })
-            .eq("Peranan", "Pentadbir"),
-          supabase.from("Pelajar").select("IDPelajar, Kelas"),
-          supabase.from("Kelas").select("NamaKelas, Tingkatan"),
-          // Find the single newest record to determine the latest Month/Year
-          supabase
-            .from("RekodBulanan")
-            .select("FLD_BULAN, FLD_TAHUN")
-            .order("FLD_TAHUN", { ascending: false })
-            .order("FLD_BULAN", { ascending: false })
-            .limit(1)
-            .single(),
-        ]);
+      const [guruRes, pentadbirRes, pelajarRes, kelasRes] = await Promise.all([
+        supabase
+          .from("Staf")
+          .select("*", { count: "exact", head: true })
+          .eq("Peranan", "Guru"),
 
-      const monthNames = [
-        "Januari",
-        "Februari",
-        "Mac",
-        "April",
-        "Mei",
-        "Jun",
-        "Julai",
-        "Ogos",
-        "September",
-        "Oktober",
-        "November",
-        "Disember",
-      ];
+        supabase
+          .from("Staf")
+          .select("*", { count: "exact", head: true })
+          .eq("Peranan", "Pentadbir"),
 
-      const latestMonth = latestMonthRes.data?.FLD_BULAN;
-      const latestTahun = latestMonthRes.data?.FLD_TAHUN;
+        supabase.from("Pelajar").select("IDPelajar, Kelas"),
 
-      // 2. Fetch all statuses for that specific latest month
+        supabase.from("Kelas").select("NamaKelas, Tingkatan"),
+      ]);
+
+      const targetMonth = month !== undefined ? month + 1 : selectedMonth + 1;
+      const targetYear = year !== undefined ? year : selectedYear;
+
       let bulananData: any[] = [];
-      if (latestMonth && latestTahun) {
+
+      if (targetMonth && targetYear) {
         const { data } = await supabase
           .from("RekodBulanan")
           .select("FLD_IDPELAJAR, Status")
-          .eq("FLD_BULAN", latestMonth)
-          .eq("FLD_TAHUN", latestTahun);
+          .eq("FLD_BULAN", targetMonth)
+          .eq("FLD_TAHUN", targetYear);
+
         bulananData = data || [];
       }
 
       const statusMap: Record<number, string> = {};
-      bulananData.forEach((rec) => {
-        if (rec.FLD_IDPELAJAR) statusMap[rec.FLD_IDPELAJAR] = rec.Status;
+      bulananData.forEach((r) => {
+        if (r.FLD_IDPELAJAR) statusMap[r.FLD_IDPELAJAR] = r.Status;
       });
 
       const kelasData = kelasRes.data || [];
       const pelajarData = pelajarRes.data || [];
 
-      // 3. Map Kelas -> Tingkatan
       const kelasToTingkatan: Record<string, string> = {};
       kelasData.forEach((k) => {
         kelasToTingkatan[k.NamaKelas] = k.Tingkatan;
       });
 
-      // 4. Initialize Stats
       const tingkatanStats: Record<string, TingkatanStat> = {};
       TINGKATAN_OPTIONS.forEach((t) => {
         tingkatanStats[t] = {
@@ -131,31 +276,30 @@ export default function AdminDashboard() {
         };
       });
 
-      let belumTotal = 0,
-        mencapaiTotal = 0,
-        melebihiTotal = 0;
+      let belumTotal = 0;
+      let mencapaiTotal = 0;
+      let melebihiTotal = 0;
 
-      // 5. Categorize based on Title Case status
-      pelajarData.forEach((pelajar) => {
-        const rawTingkatan = kelasToTingkatan[pelajar.Kelas];
-        const tingkatanKey = rawTingkatan?.startsWith("TINGKATAN")
-          ? rawTingkatan
-          : `Tingkatan ${rawTingkatan}`;
+      pelajarData.forEach((p) => {
+        const raw = kelasToTingkatan[p.Kelas];
+        const key = raw?.toUpperCase().includes("TINGKATAN")
+          ? raw
+          : `TINGKATAN ${raw}`;
 
-        if (!tingkatanStats[tingkatanKey]) return;
+        if (!tingkatanStats[key]) return;
 
-        const statusDB = statusMap[pelajar.IDPelajar];
-        tingkatanStats[tingkatanKey].jumlahPelajar++;
+        const status = statusMap[p.IDPelajar];
 
-        // Exact Title Case matches
-        if (statusDB === "Belum Mencapai Sukatan") {
-          tingkatanStats[tingkatanKey].belumMencapai++;
+        tingkatanStats[key].jumlahPelajar++;
+
+        if (status === "Belum Mencapai Sukatan") {
+          tingkatanStats[key].belumMencapai++;
           belumTotal++;
-        } else if (statusDB === "Mencapai Sukatan") {
-          tingkatanStats[tingkatanKey].mencapaiSukatan++;
+        } else if (status === "Mencapai Sukatan") {
+          tingkatanStats[key].mencapaiSukatan++;
           mencapaiTotal++;
-        } else if (statusDB === "Melebihi Sukatan") {
-          tingkatanStats[tingkatanKey].melebihiSukatan++;
+        } else if (status === "Melebihi Sukatan") {
+          tingkatanStats[key].melebihiSukatan++;
           melebihiTotal++;
         }
       });
@@ -168,167 +312,586 @@ export default function AdminDashboard() {
         mencapaiTotal,
         melebihiTotal,
         tingkatanStats: Object.values(tingkatanStats),
-        displayMonth: latestMonth ? monthNames[latestMonth - 1] : "N/A",
-        displayYear: latestTahun || 0,
+        displayMonth: monthNames[targetMonth - 1],
+        displayYear: targetYear,
       });
-    } catch (error) {
-      console.error("Dashboard Error:", error);
+    } catch (err) {
+      console.error(err);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }
 
-  const totalPelajar = data.jumlahPelajar || 1; // avoid division by zero
+  async function handleRefresh() {
+    setRefreshing(true);
+    await fetchDashboard();
+  }
+
+  async function handleDateChange(month: number, year: number) {
+    setSelectedMonth(month);
+    setSelectedYear(year);
+    //setLoading(true);
+    await fetchDashboard(month, year);
+  }
+
+  const total = data.jumlahPelajar || 1;
+  const belumPercent = (data.belumTotal / total) * 100;
+  const mencapaiPercent = (data.mencapaiTotal / total) * 100;
+  const melebihiPercent = (data.melebihiTotal / total) * 100;
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="flex min-h-screen bg-gray-50">
       <AdminSidebar />
-      <main className="flex-1 p-10">
-        {/* Header Enhancement */}
-        <header className="mb-10">
-          <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">
-            DASHBOARD SMK AGAMA BANGI
-          </h1>
-          <p className="text-slate-500 mt-1">
-            Ringkasan prestasi hafazan pelajar mengikut tingkatan.
-          </p>
-        </header>
+
+      <main className="flex-1 p-6 lg:p-8">
+        {/* Header */}
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            {/* Left */}
+            <div>
+              <h1 className="text-2xl font-semibold text-gray-900">
+                Dashboard
+              </h1>
+
+              <div className="mt-2 flex items-center gap-2 text-sm text-gray-500">
+                <CalendarIcon />
+                <span>
+                  Laporan Bulanan · {data.displayMonth} {data.displayYear}
+                </span>
+              </div>
+            </div>
+
+            {/* Right */}
+            <div className="w-full sm:w-auto sm:min-w-[240px]">
+              <MonthPicker
+                selectedMonth={selectedMonth}
+                selectedYear={selectedYear}
+                onSelect={handleDateChange}
+              />
+            </div>
+          </div>
+        </div>
 
         {loading ? (
-          <div className="text-center py-20 text-gray-400">
-            Memuatkan data...
+          <div className="flex items-center justify-center py-20">
+            <div className="text-center">
+              <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-gray-500">Memuatkan data dashboard...</p>
+            </div>
           </div>
         ) : (
           <>
-            {/* Stats - More elegant cards */}
-            <div className="grid grid-cols-3 gap-6 mb-8">
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100 hover:border-indigo-200 transition-colors">
-                <p className="text-slate-500 font-medium text-sm mb-1">
-                  Jumlah Pentadbir
-                </p>
-                <p className="text-5xl font-black text-orange-600">
-                  {data.jumlahPentadbir}
-                </p>
-              </div>
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100 hover:border-indigo-200 transition-colors">
-                <p className="text-slate-500 font-medium text-sm mb-1">
-                  Jumlah Guru
-                </p>
-                <p className="text-5xl font-black text-indigo-600">
-                  {data.jumlahGuru}
-                </p>
-              </div>
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100 hover:border-indigo-200 transition-colors">
-                <p className="text-slate-500 font-medium text-sm mb-1">
-                  Jumlah Pelajar
-                </p>
-                <p className="text-5xl font-black text-slate-800">
-                  {data.jumlahPelajar}
-                </p>
-              </div>
-            </div>
-
-            {/* Overall Progress Bar - Cleaner spacing & refined colors */}
-            <div className="bg-white rounded-xl p-8 mb-8 shadow-sm border border-slate-100">
-              <h2 className="text-sm font-bold text-indigo-800 uppercase tracking-widest mb-6">
-                Prestasi Keseluruhan{" "}
-                {data.displayMonth && (
-                  <span className="ml-2 text-slate-400 font-medium normal-case">
-                    ({data.displayMonth} {data.displayYear})
-                  </span>
-                )}
-              </h2>
-              <div className="grid grid-cols-3 gap-8">
-                {[
-                  {
-                    label: "Belum Mencapai",
-                    count: data.belumTotal,
-                    color: "bg-rose-500",
-                    text: "text-rose-600",
-                  },
-                  {
-                    label: "Mencapai Sukatan",
-                    count: data.mencapaiTotal,
-                    color: "bg-amber-500",
-                    text: "text-amber-600",
-                  },
-                  {
-                    label: "Melebihi Sukatan",
-                    count: data.melebihiTotal,
-                    color: "bg-emerald-500",
-                    text: "text-emerald-600",
-                  },
-                ].map((item) => (
-                  <div key={item.label}>
-                    <p className="text-xs font-semibold text-slate-600 mb-2">
-                      {item.label}
-                    </p>
-                    <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
-                      <div
-                        className={`${item.color} h-full rounded-full transition-all duration-1000`}
-                        style={{
-                          width: `${Math.round((item.count / totalPelajar) * 100)}%`,
-                        }}
-                      />
-                    </div>
-                    <p className={`text-sm font-bold mt-2 ${item.text}`}>
-                      {Math.round((item.count / totalPelajar) * 100)}% —{" "}
-                      {item.count}
-                      <span className="text-slate-400 font-normal">
-                        — orang
-                      </span>
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Per Tingkatan - Card refinement */}
-            <div className="flex flex-col gap-4">
-              <h2 className="text-sm font-bold text-indigo-800 uppercase tracking-widest px-1">
-                Statistik Mengikut Tingkatan
-              </h2>
-              {data.tingkatanStats.map((t) => (
+            {/* KPI Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              {/* Pelajar */}
+              <div
+                style={{
+                  background:
+                    "linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)",
+                  borderRadius: 18,
+                  padding: "22px",
+                  position: "relative",
+                  overflow: "hidden",
+                  boxShadow: "0 10px 25px rgba(37,99,235,0.18)",
+                  transition: "0.25s ease",
+                  cursor: "pointer",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-4px)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                }}
+              >
+                {/* Background Circle */}
                 <div
-                  key={t.tingkatan}
-                  className="bg-white rounded-xl p-5 shadow-sm border border-slate-100 hover:shadow-md transition-shadow group"
-                >
-                  <div className="flex items-center gap-3 mb-4">
-                    <span className="font-bold text-slate-800 text-lg group-hover:text-indigo-600 transition-colors">
-                      {t.tingkatan}
-                    </span>
-                    <span className="bg-slate-100 text-slate-500 text-xs font-bold px-2 py-1 rounded-md">
-                      {t.jumlahPelajar} PELAJAR
-                    </span>
+                  style={{
+                    position: "absolute",
+                    right: -20,
+                    top: -20,
+                    width: 100,
+                    height: 100,
+                    borderRadius: "50%",
+                    background: "rgba(255,255,255,0.12)",
+                  }}
+                />
+
+                <div className="flex items-center justify-between relative z-10">
+                  <div>
+                    <p
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        textTransform: "uppercase",
+                        color: "rgba(255,255,255,0.75)",
+                        letterSpacing: "0.08em",
+                      }}
+                    >
+                      Pelajar
+                    </p>
+
+                    <h2
+                      style={{
+                        fontSize: 32,
+                        fontWeight: 800,
+                        color: "white",
+                        marginTop: 8,
+                        lineHeight: 1,
+                      }}
+                    >
+                      {data.jumlahPelajar}
+                    </h2>
+
+                    <p
+                      style={{
+                        marginTop: 10,
+                        fontSize: 13,
+                        color: "rgba(255,255,255,0.8)",
+                      }}
+                    >
+                      Keseluruhan pelajar berdaftar
+                    </p>
                   </div>
-                  <div className="grid grid-cols-3 gap-4 border-t border-slate-50 pt-4">
-                    <div className="px-2">
-                      <p className="text-[10px] uppercase tracking-wider font-bold text-rose-400">
-                        Belum Mencapai Sukatan
-                      </p>
-                      <p className="text-2xl font-bold text-slate-700">
-                        {t.belumMencapai}
+
+                  <div
+                    style={{
+                      width: 58,
+                      height: 58,
+                      borderRadius: 16,
+                      background: "rgba(255,255,255,0.18)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "white",
+                      backdropFilter: "blur(4px)",
+                    }}
+                  >
+                    <GraduationCapIcon />
+                  </div>
+                </div>
+              </div>
+
+              {/* Guru */}
+              <div
+                style={{
+                  background:
+                    "linear-gradient(135deg, #0f766e 0%, #14b8a6 100%)",
+                  borderRadius: 18,
+                  padding: "22px",
+                  position: "relative",
+                  overflow: "hidden",
+                  boxShadow: "0 10px 25px rgba(20,184,166,0.18)",
+                  transition: "0.25s ease",
+                  cursor: "pointer",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-4px)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                }}
+              >
+                <div
+                  style={{
+                    position: "absolute",
+                    right: -20,
+                    top: -20,
+                    width: 100,
+                    height: 100,
+                    borderRadius: "50%",
+                    background: "rgba(255,255,255,0.12)",
+                  }}
+                />
+
+                <div className="flex items-center justify-between relative z-10">
+                  <div>
+                    <p
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        textTransform: "uppercase",
+                        color: "rgba(255,255,255,0.75)",
+                        letterSpacing: "0.08em",
+                      }}
+                    >
+                      Guru
+                    </p>
+
+                    <h2
+                      style={{
+                        fontSize: 32,
+                        fontWeight: 800,
+                        color: "white",
+                        marginTop: 8,
+                        lineHeight: 1,
+                      }}
+                    >
+                      {data.jumlahGuru}
+                    </h2>
+
+                    <p
+                      style={{
+                        marginTop: 10,
+                        fontSize: 13,
+                        color: "rgba(255,255,255,0.8)",
+                      }}
+                    >
+                      Tenaga pengajar aktif
+                    </p>
+                  </div>
+
+                  <div
+                    style={{
+                      width: 58,
+                      height: 58,
+                      borderRadius: 16,
+                      background: "rgba(255,255,255,0.18)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "white",
+                      backdropFilter: "blur(4px)",
+                    }}
+                  >
+                    <IconUsers />
+                  </div>
+                </div>
+              </div>
+
+              {/* Pentadbir */}
+              <div
+                style={{
+                  background:
+                    "linear-gradient(135deg, #7c3aed 0%, #a855f7 100%)",
+                  borderRadius: 18,
+                  padding: "22px",
+                  position: "relative",
+                  overflow: "hidden",
+                  boxShadow: "0 10px 25px rgba(168,85,247,0.18)",
+                  transition: "0.25s ease",
+                  cursor: "pointer",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "translateY(-4px)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "translateY(0)";
+                }}
+              >
+                <div
+                  style={{
+                    position: "absolute",
+                    right: -20,
+                    top: -20,
+                    width: 100,
+                    height: 100,
+                    borderRadius: "50%",
+                    background: "rgba(255,255,255,0.12)",
+                  }}
+                />
+
+                <div className="flex items-center justify-between relative z-10">
+                  <div>
+                    <p
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        textTransform: "uppercase",
+                        color: "rgba(255,255,255,0.75)",
+                        letterSpacing: "0.08em",
+                      }}
+                    >
+                      Pentadbir
+                    </p>
+
+                    <h2
+                      style={{
+                        fontSize: 32,
+                        fontWeight: 800,
+                        color: "white",
+                        marginTop: 8,
+                        lineHeight: 1,
+                      }}
+                    >
+                      {data.jumlahPentadbir}
+                    </h2>
+
+                    <p
+                      style={{
+                        marginTop: 10,
+                        fontSize: 13,
+                        color: "rgba(255,255,255,0.8)",
+                      }}
+                    >
+                      Jumlah pentadbir sistem
+                    </p>
+                  </div>
+
+                  <div
+                    style={{
+                      width: 58,
+                      height: 58,
+                      borderRadius: 16,
+                      background: "rgba(255,255,255,0.18)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "white",
+                      backdropFilter: "blur(4px)",
+                    }}
+                  >
+                    <IconTarget />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Performance Overview */}
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm mb-8">
+              <div className="p-6 border-b border-gray-100">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-gray-500 rounded-lg">
+                      <BarChartIcon />
+                    </div>
+                    <div>
+                      <h2 className="text-base font-semibold text-gray-900">
+                        Prestasi Keseluruhan
+                      </h2>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        Berdasarkan rekod hafazan terkini
                       </p>
                     </div>
-                    <div className="px-2 border-x border-slate-50">
-                      <p className="text-[10px] uppercase tracking-wider font-bold text-amber-500">
-                        Mencapai Sukatan
+                  </div>
+                  <div className="flex items-center gap-4 text-xs">
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-2.5 h-2.5 rounded-full bg-rose-500"></div>
+                      <span className="text-gray-600">Belum Mencapai</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-2.5 h-2.5 rounded-full bg-amber-400"></div>
+                      <span className="text-gray-600">Mencapai</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
+                      <span className="text-gray-600">Melebihi</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6">
+                {/* Progress Bar */}
+                <div className="space-y-4">
+                  <div className="relative h-3 bg-gray-100 rounded-full overflow-hidden">
+                    <div
+                      className="absolute left-0 top-0 h-full bg-rose-500 transition-all duration-500"
+                      style={{ width: `${belumPercent}%` }}
+                    />
+                    <div
+                      className="absolute top-0 h-full bg-amber-400 transition-all duration-500"
+                      style={{
+                        left: `${belumPercent}%`,
+                        width: `${mencapaiPercent}%`,
+                      }}
+                    />
+                    <div
+                      className="absolute top-0 h-full bg-emerald-500 transition-all duration-500"
+                      style={{
+                        left: `${belumPercent + mencapaiPercent}%`,
+                        width: `${melebihiPercent}%`,
+                      }}
+                    />
+                  </div>
+
+                  {/* Stats Row */}
+                  <div className="grid grid-cols-3 gap-4 pt-2">
+                    <div className="text-center">
+                      <p className="text-2xl font-bold text-rose-600">
+                        {data.belumTotal}
                       </p>
-                      <p className="text-2xl font-bold text-slate-700">
-                        {t.mencapaiSukatan}
+                      <div className="flex items-center justify-center gap-1 text-xs text-gray-500 mt-1">
+                        <TrendingDownIcon />
+                        <span>Belum Mencapai</span>
+                      </div>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {belumPercent.toFixed(1)}%
                       </p>
                     </div>
-                    <div className="px-2">
-                      <p className="text-[10px] uppercase tracking-wider font-bold text-emerald-500">
-                        Melebihi Sukatan
+                    <div className="text-center">
+                      <p className="text-2xl font-bold text-amber-600">
+                        {data.mencapaiTotal}
                       </p>
-                      <p className="text-2xl font-bold text-slate-700">
-                        {t.melebihiSukatan}
+                      <div className="flex items-center justify-center gap-1 text-xs text-gray-500 mt-1">
+                        <span>Mencapai Sukatan</span>
+                      </div>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {mencapaiPercent.toFixed(1)}%
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-2xl font-bold text-emerald-600">
+                        {data.melebihiTotal}
+                      </p>
+                      <div className="flex items-center justify-center gap-1 text-xs text-gray-500 mt-1">
+                        <TrendingUpIcon />
+                        <span>Melebihi Sukatan</span>
+                      </div>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {melebihiPercent.toFixed(1)}%
                       </p>
                     </div>
                   </div>
                 </div>
-              ))}
+              </div>
+            </div>
+
+            {/* Tingkatan Table */}
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/30">
+                <div className="flex items-center gap-3">
+                  <div className="p-1.5 bg-gray-500 rounded-lg">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                      <line x1="3" y1="9" x2="21" y2="9" />
+                      <line x1="9" y1="21" x2="9" y2="9" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-semibold text-gray-900">
+                      Statistik Mengikut Tingkatan
+                    </h2>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      Agihan pencapaian hafazan mengikut tingkatan
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-100 bg-gray-50/50">
+                      <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        Tingkatan
+                      </th>
+                      <th className="text-center px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        Belum Mencapai
+                      </th>
+                      <th className="text-center px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        Mencapai Sukatan
+                      </th>
+                      <th className="text-center px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        Melebihi Sukatan
+                      </th>
+                      <th className="text-center px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        Jumlah
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.tingkatanStats.map((t, idx) => {
+                      const jumlah = t.jumlahPelajar;
+                      const belumPercent =
+                        jumlah > 0 ? (t.belumMencapai / jumlah) * 100 : 0;
+                      const mencapaiPercent =
+                        jumlah > 0 ? (t.mencapaiSukatan / jumlah) * 100 : 0;
+                      const melebihiPercent =
+                        jumlah > 0 ? (t.melebihiSukatan / jumlah) * 100 : 0;
+
+                      return (
+                        <tr
+                          key={t.tingkatan}
+                          className={`border-b border-gray-100 hover:bg-gray-50/30 transition-colors ${idx % 2 === 0 ? "bg-white" : "bg-gray-50/20"}`}
+                        >
+                          <td className="px-6 py-4">
+                            <span className=" text-m text-gray-900">
+                              {t.tingkatan}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex flex-col items-center">
+                              <span className="text-sm font-semibold text-rose-600">
+                                {t.belumMencapai}
+                              </span>
+                              <div className="w-full max-w-[80px] h-1 bg-gray-100 rounded-full mt-1.5 overflow-hidden">
+                                <div
+                                  className="h-full bg-rose-500 rounded-full"
+                                  style={{ width: `${belumPercent}%` }}
+                                />
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex flex-col items-center">
+                              <span className="text-sm font-semibold text-amber-600">
+                                {t.mencapaiSukatan}
+                              </span>
+                              <div className="w-full max-w-[80px] h-1 bg-gray-100 rounded-full mt-1.5 overflow-hidden">
+                                <div
+                                  className="h-full bg-amber-400 rounded-full"
+                                  style={{ width: `${mencapaiPercent}%` }}
+                                />
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex flex-col items-center">
+                              <span className="text-sm font-semibold text-emerald-600">
+                                {t.melebihiSukatan}
+                              </span>
+                              <div className="w-full max-w-[80px] h-1 bg-gray-100 rounded-full mt-1.5 overflow-hidden">
+                                <div
+                                  className="h-full bg-emerald-500 rounded-full"
+                                  style={{ width: `${melebihiPercent}%` }}
+                                />
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <span className="text-sm font-medium text-gray-700">
+                              {jumlah}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Table Footer */}
+              <div className="px-6 py-3 border-t border-gray-100 bg-gray-50/30">
+                <div className="flex justify-between items-center text-xs text-gray-500">
+                  <span>Jumlah Keseluruhan Pelajar: {data.jumlahPelajar}</span>
+                  <div className="flex gap-4">
+                    <span className="flex items-center gap-1">
+                      <div className="w-2 h-2 rounded-full bg-rose-500"></div>
+                      Belum: {data.belumTotal}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <div className="w-2 h-2 rounded-full bg-amber-400"></div>
+                      Mencapai: {data.mencapaiTotal}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                      Melebihi: {data.melebihiTotal}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
           </>
         )}

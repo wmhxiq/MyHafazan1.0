@@ -190,7 +190,13 @@ export default function LoginPage() {
           )}
         </AnimatePresence>
 
-        <div className="space-y-5">
+        <form
+          className="space-y-5"
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleLogin();
+          }}
+        >
           {/* ID Field */}
           <div className="space-y-1.5">
             <label className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 ml-2">
@@ -226,7 +232,7 @@ export default function LoginPage() {
                     type={showPassword ? "text" : "password"}
                     value={kataLaluan}
                     onChange={(e) => setKataLaluan(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+                    // onKeyDown={(e) => e.key === "Enter" && handleLogin()} no need because change to form
                     placeholder="••••••••"
                     className="w-full bg-slate-50/50 border-2 border-slate-100 rounded-2xl pl-12 pr-12 py-4 text-sm font-semibold text-slate-800 focus:bg-white focus:border-indigo-500 focus:shadow-[0_0_0_4px_rgba(99,102,241,0.1)] transition-all outline-none placeholder:text-slate-300"
                   />
@@ -268,6 +274,7 @@ export default function LoginPage() {
           </AnimatePresence>
 
           <motion.button
+            type="submit"
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.98 }}
             onClick={handleLogin}
@@ -283,7 +290,7 @@ export default function LoginPage() {
               "LOG MASUK"
             )}
           </motion.button>
-        </div>
+        </form>
       </motion.div>
     </div>
   );

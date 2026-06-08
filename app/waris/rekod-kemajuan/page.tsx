@@ -3,7 +3,6 @@ import { useEffect, useState, Fragment, useRef } from "react";
 import WarisSidebar from "@/app/components/WarisSidebar";
 import { supabase } from "@/lib/supabase";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import MonthPicker from "@/app/components/MonthPicker";
 import Chart from "chart.js/auto";
 
@@ -14,6 +13,7 @@ type PelajarInfo = {
   Tingkatan: string;
   NamaGuru: string;
   statusHafazan: string;
+  avatarUrl?: string;
 };
 
 type RekodRow = {
@@ -62,8 +62,8 @@ const MONTH_OPTIONS = [
 ];
 
 export default function WarisRekodKemajuan() {
-  const router = useRouter();
   const { data: session } = useSession();
+
   const [pelajarInfo, setPelajarInfo] = useState<PelajarInfo | null>(null);
   const [rekodList, setRekodList] = useState<RekodRow[]>([]);
   const [sasaran, setSasaran] = useState<SasaranInfo>({
@@ -77,14 +77,30 @@ export default function WarisRekodKemajuan() {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
-  // Progress state
+  //Rekod Juzuk keseluruhan
+  const [allTimeCompletedJuzukSet, setAllTimeCompletedJuzukSet] = useState<
+    Set<number>
+  >(new Set());
+  const [allTimeTotalJuzukHB, setAllTimeTotalJuzukHB] = useState(0);
+
+  // Progres bulanan
   const [totalHafazanMuka, setTotalHafazanMuka] = useState(0);
-  const [currentJuzuk, setCurrentJuzuk] = useState(0);
-  const [currentMukaDalamJuzuk, setCurrentMukaDalamJuzuk] = useState(0);
-  const [totalPagesInJuzuk, setTotalPagesInJuzuk] = useState(20);
   const [totalMBMuka, setTotalMBMuka] = useState(0);
   const [totalMLMuka, setTotalMLMuka] = useState(0);
+  const [totalPagesInJuzuk, setTotalPagesInJuzuk] = useState(20);
   const [latestSurah, setLatestSurah] = useState("-");
+  const [latestMBMuka, setLatestMBMuka] = useState(0);
+  const [latestMLMuka, setLatestMLMuka] = useState(0);
+
+  // donut chart
+  const [hafazanHover, setHafazanHover] = useState(false);
+  const [mbHover, setMbHover] = useState(false);
+  const [mlHover, setMlHover] = useState(false);
+
+  //not use
+  const [currentJuzuk, setCurrentJuzuk] = useState(0);
+  const [currentMukaDalamJuzuk, setCurrentMukaDalamJuzuk] = useState(0);
+  const [totalJuzukHB, setTotalJuzukHB] = useState(0);
 
   // Chart Canvas References
   const hafazanChartRef = useRef<HTMLCanvasElement | null>(null);
@@ -118,87 +134,13 @@ export default function WarisRekodKemajuan() {
       cutout: "72%",
       plugins: {
         legend: { display: false },
-        tooltip: {
-          padding: 10,
-          backgroundColor: "#0f172a",
-          titleFont: {
-            size: 11,
-            weight: "bold" as const,
-            family: "Plus Jakarta Sans",
-          },
-          bodyFont: { size: 12, family: "Plus Jakarta Sans" },
-          cornerRadius: 8,
-          callbacks: {
-            label: function (context: any) {
-              return ` ${context.label}: ${context.raw} Muka Surat`;
-            },
-          },
-        },
+        tooltip: { display: false },
       },
     };
 
-    // Clean up older chart frames
     if (activeCharts.current.hb) activeCharts.current.hb.destroy();
     if (activeCharts.current.mb) activeCharts.current.mb.destroy();
     if (activeCharts.current.ml) activeCharts.current.ml.destroy();
-
-    // 1. Dynamic Hafazan Chart Setup
-    if (hafazanChartRef.current) {
-      const remainingHB = Math.max(0, sasaran.SasaranMuka - totalHafazanMuka);
-      activeCharts.current.hb = new Chart(hafazanChartRef.current, {
-        type: "doughnut",
-        data: {
-          labels: ["Selesai", "Baki Sasaran"],
-          datasets: [
-            {
-              data: [totalHafazanMuka, remainingHB],
-              backgroundColor: ["#10b981", "#f1f5f9"],
-              borderWidth: 0,
-            },
-          ],
-        },
-        options: donutOptions,
-      });
-    }
-
-    // 2. Dynamic Murajaah Baru Chart Setup
-    if (mbChartRef.current) {
-      const remainingMB = Math.max(0, sasaran.SasaranMuka - totalMBMuka);
-      activeCharts.current.mb = new Chart(mbChartRef.current, {
-        type: "doughnut",
-        data: {
-          labels: ["Selesai", "Baki Sasaran"],
-          datasets: [
-            {
-              data: [totalMBMuka, remainingMB],
-              backgroundColor: ["#6366f1", "#f1f5f9"],
-              borderWidth: 0,
-            },
-          ],
-        },
-        options: donutOptions,
-      });
-    }
-
-    // 3. Dynamic Murajaah Lama Chart Setup
-    if (mlChartRef.current) {
-      const targetML = sasaran.SasaranMuka * 20;
-      const remainingML = Math.max(0, targetML - totalMLMuka);
-      activeCharts.current.ml = new Chart(mlChartRef.current, {
-        type: "doughnut",
-        data: {
-          labels: ["Selesai", "Baki Sasaran"],
-          datasets: [
-            {
-              data: [totalMLMuka, remainingML],
-              backgroundColor: ["#f59e0b", "#f1f5f9"],
-              borderWidth: 0,
-            },
-          ],
-        },
-        options: donutOptions,
-      });
-    }
 
     return () => {
       if (activeCharts.current.hb) activeCharts.current.hb.destroy();
@@ -217,8 +159,8 @@ export default function WarisRekodKemajuan() {
     setLoading(true);
     setRekodList([]);
     setTotalHafazanMuka(0);
-    setCurrentJuzuk(0);
-    setCurrentMukaDalamJuzuk(0);
+    //setCurrentJuzuk(0);
+    //setCurrentMukaDalamJuzuk(0);
     setTotalPagesInJuzuk(20);
     setLatestSurah("-");
     setUlasanBulanan(null);
@@ -226,7 +168,7 @@ export default function WarisRekodKemajuan() {
     const startDate = new Date(selectedYear, selectedMonth, 1).toISOString();
     const endDate = new Date(selectedYear, selectedMonth + 1, 0).toISOString();
 
-    const [pelajarRes, rekodRes] = await Promise.all([
+    const [pelajarRes, rekodRes, rekodAllTimeRes] = await Promise.all([
       supabase
         .from("Pelajar")
         .select("IDPelajar, NamaPelajar, Kelas, IDGuru")
@@ -238,10 +180,15 @@ export default function WarisRekodKemajuan() {
         .gte("Tarikh", startDate)
         .lte("Tarikh", endDate)
         .order("Tarikh", { ascending: false }),
+      supabase
+        .from("RekodHarian")
+        .select("HBmula, HBakhir")
+        .eq("IDPelajar", idPelajar),
     ]);
 
     const pelajar = pelajarRes.data;
     const rekodData = rekodRes.data;
+    const rekodAllTime = rekodAllTimeRes.data;
 
     if (!pelajar) {
       setLoading(false);
@@ -295,13 +242,66 @@ export default function WarisRekodKemajuan() {
       Tingkatan: tingkatan,
       NamaGuru: guruRes.data?.NamaGuru || "-",
       statusHafazan,
+      avatarUrl: `/img/${pelajar.IDPelajar}.jpg`,
     });
 
+    // ── ALL-TIME JUZUK GRID (uses full record history) ──────────────────
+    if (rekodAllTime && rekodAllTime.length > 0) {
+      const allTimePages = new Set<number>();
+      rekodAllTime.forEach((r) => {
+        if (r.HBmula > 0 && r.HBakhir > 0)
+          for (let page = r.HBmula; page <= r.HBakhir; page++)
+            allTimePages.add(page);
+      });
+
+      // Fetch surah/juzuk info for all unique pages across all time
+      const allTimePageList = [...allTimePages];
+      const { data: allTimeSurahData } = await supabase
+        .from("TBL_Surah")
+        .select("MukaSurat, Juzuk")
+        .in("MukaSurat", allTimePageList);
+
+      const allTimeJuzukSet = new Set<number>();
+      const allTimeSurahMap: Record<number, number> = {};
+      allTimeSurahData?.forEach((s) => {
+        allTimeSurahMap[s.MukaSurat] = s.Juzuk;
+      });
+      allTimePageList.forEach((page) => {
+        if (allTimeSurahMap[page]) allTimeJuzukSet.add(allTimeSurahMap[page]);
+      });
+
+      setAllTimeCompletedJuzukSet(new Set(allTimeJuzukSet));
+      setAllTimeTotalJuzukHB(allTimeJuzukSet.size);
+    } else {
+      setAllTimeCompletedJuzukSet(new Set());
+      setAllTimeTotalJuzukHB(0);
+    }
+
+    // Filtered Data (summary card & rekod List)
     if (!rekodData || rekodData.length === 0) {
       setRekodList([]);
       setLoading(false);
       return;
     }
+
+    // Collect all unique end-pages for surah lookup
+    const allMukaSurat = [
+      ...new Set([
+        ...rekodData.map((r) => r.HBakhir).filter(Boolean),
+        ...rekodData.map((r) => r.MBakhir).filter(Boolean),
+        ...rekodData.map((r) => r.MLakhir).filter(Boolean),
+      ]),
+    ];
+
+    const { data: surahData } = await supabase
+      .from("TBL_Surah")
+      .select("MukaSurat, NamaSurah, Juzuk")
+      .in("MukaSurat", allMukaSurat);
+
+    const surahMap: Record<number, { NamaSurah: string; Juzuk: number }> = {};
+    surahData?.forEach((s) => {
+      surahMap[s.MukaSurat] = { NamaSurah: s.NamaSurah, Juzuk: s.Juzuk };
+    });
 
     const uniqueHafazanPages = new Set<number>();
     rekodData.forEach((r) => {
@@ -333,23 +333,17 @@ export default function WarisRekodKemajuan() {
     });
     const totalMLPages = uniqueMLPages.size;
 
-    const allMukaSurat = [
-      ...new Set([
-        ...rekodData.map((r) => r.HBakhir).filter(Boolean),
-        ...rekodData.map((r) => r.MBakhir).filter(Boolean),
-        ...rekodData.map((r) => r.MLakhir).filter(Boolean),
-      ]),
-    ];
-
-    const { data: surahData } = await supabase
-      .from("TBL_Surah")
-      .select("MukaSurat, NamaSurah, Juzuk")
-      .in("MukaSurat", allMukaSurat);
-
-    const surahMap: Record<number, { NamaSurah: string; Juzuk: number }> = {};
-    surahData?.forEach((s) => {
-      surahMap[s.MukaSurat] = { NamaSurah: s.NamaSurah, Juzuk: s.Juzuk };
+    const uniqueJuzukHB = new Set<number>();
+    rekodData.forEach((r) => {
+      if (r.HBmula > 0 && r.HBakhir > 0)
+        for (let page = r.HBmula; page <= r.HBakhir; page++) {
+          uniqueHafazanPages.add(page);
+          if (surahMap[page]) uniqueJuzukHB.add(surahMap[page].Juzuk);
+        }
     });
+
+    const totalJuzukHB = uniqueJuzukHB.size;
+    //setCompletedJuzukSet(new Set(uniqueJuzukHB)); //save list of juzuk
 
     const latestHafazanRekod = rekodData.find(
       (r) => r.HBakhir && r.HBakhir > 0,
@@ -357,6 +351,11 @@ export default function WarisRekodKemajuan() {
     const latestMuka = latestHafazanRekod?.HBakhir || 0;
     const currentSurahInfo = surahMap[latestMuka];
     const juzuk = currentSurahInfo?.Juzuk || 0;
+
+    const latestMBRekod = rekodData.find((r) => r.MBakhir && r.MBakhir > 0);
+    const latestMLRekod = rekodData.find((r) => r.MLakhir && r.MLakhir > 0);
+    setLatestMBMuka(latestMBRekod?.MBakhir || 0);
+    setLatestMLMuka(latestMLRekod?.MLakhir || 0);
 
     let mukaDalamJuzuk = 0;
     let totalPagesInCurrentJuzuk = 20;
@@ -394,6 +393,7 @@ export default function WarisRekodKemajuan() {
     setTotalPagesInJuzuk(totalPagesInCurrentJuzuk);
     setLatestSurah(currentSurahInfo?.NamaSurah || "-");
     setRekodList(rekodWithSurah);
+    setTotalJuzukHB(totalPages); //monthly hafazan pages count
     setLoading(false);
   }
 
@@ -424,19 +424,30 @@ export default function WarisRekodKemajuan() {
   function getUlasanColor(status: string) {
     switch (status) {
       case "Cemerlang":
-      case "Sangat Lancar":
-      case "Lancar":
-        return "bg-emerald-50 text-emerald-700";
+        return "bg-green-100 text-green-700";
       case "Sangat Baik":
+        return "bg-emerald-100 text-emerald-700";
       case "Baik":
-        return "bg-indigo-50 text-indigo-700";
+        return "bg-blue-100 text-blue-700";
       case "Memuaskan":
-        return "bg-amber-50 text-amber-600";
-      case "Kurang Lancar":
+        return "bg-yellow-100 text-yellow-700";
       case "Lemah":
-        return "bg-amber-50 text-amber-700";
+        return "bg-red-100 text-red-700";
       default:
-        return "bg-slate-50 text-slate-600";
+        return "bg-gray-100 text-gray-500";
+    }
+  }
+
+  function getJenisColor(jenis: string) {
+    switch (jenis) {
+      case "Hafazan":
+        return "bg-fuchsia-600 text-white font-medium shadow-sm shadow-fuchsia-200 dark:shadow-none";
+      case "Murajaah Baru":
+        return "bg-violet-600 text-white font-medium shadow-sm shadow-violet-200 dark:shadow-none";
+      case "Murajaah Lama":
+        return "bg-[#c20071]/90 text-white font-medium shadow-sm shadow-[#c20071]/20 dark:shadow-none";
+      default:
+        return "bg-gray-100 text-gray-500";
     }
   }
 
@@ -448,16 +459,80 @@ export default function WarisRekodKemajuan() {
   });
 
   // Calculate Original Progress Variables
-  const juzukProgress = Math.min(
-    (currentJuzuk / sasaran.SasaranJuzuk) * 100,
-    100,
-  );
+
   const mukaDalamJuzukProgress = Math.min(
     (currentMukaDalamJuzuk / totalPagesInJuzuk) * 100,
     100,
   );
   const totalMukaProgress = Math.min(
     (totalHafazanMuka / (sasaran.SasaranMuka * sasaran.SasaranJuzuk)) * 100,
+    100,
+  );
+
+  function drawDonut(
+    ref: React.RefObject<HTMLCanvasElement | null>,
+    value: number,
+    total: number,
+    color: string,
+  ) {
+    const canvas = ref.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const size = 112;
+    canvas.width = size;
+    canvas.height = size;
+    const cx = size / 2,
+      cy = size / 2,
+      r = 44,
+      lw = 10;
+    const pct = total > 0 ? Math.min(value / total, 1) : 0;
+    ctx.clearRect(0, 0, size, size);
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.strokeStyle = "#f1f5f9";
+    ctx.lineWidth = lw;
+    ctx.stroke();
+    if (pct > 0) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + pct * Math.PI * 2);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = lw;
+      ctx.lineCap = "round";
+      ctx.stroke();
+    }
+    ctx.fillStyle = "#0f172a";
+    ctx.font = "bold 15px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(`${Math.round(pct * 100)}%`, cx, cy);
+  }
+
+  // Redraw whenever data or loading state changes.
+  // Two rAF frames ensure the canvas elements are fully painted by React before we draw.
+  useEffect(() => {
+    if (loading) return;
+    let raf1: number, raf2: number;
+    raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => {
+        drawDonut(
+          hafazanChartRef,
+          totalHafazanMuka,
+          totalPagesInJuzuk,
+          "#d946ef",
+        );
+        drawDonut(mbChartRef, totalMBMuka, totalHafazanMuka, "#7c3aed");
+        drawDonut(mlChartRef, totalMLMuka, totalHafazanMuka, "#c20071");
+      });
+    });
+    return () => {
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+    };
+  }, [loading, totalHafazanMuka, totalMBMuka, totalMLMuka, sasaran]);
+
+  const juzukProgress = Math.min(
+    (totalJuzukHB / sasaran.SasaranJuzuk) * 100,
     100,
   );
 
@@ -468,14 +543,9 @@ export default function WarisRekodKemajuan() {
       <main className="flex-1 min-w-0 overflow-y-auto px-4 py-8 md:p-8 lg:p-10">
         {/* Header Module */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-              Rekod Kemajuan Hafazan Pelajar
-            </h1>
-            <p className="text-sm text-slate-500 mt-1 font-medium">
-              Pantau prestasi mingguan, bulanan, dan ulasan guru halaqah.
-            </p>
-          </div>
+          <h1 className="text-2xl font-bold text-blue-900">
+            Rekod Kemajuan Pelajar
+          </h1>
 
           <div className="inline-flex items-center ">
             <MonthPicker
@@ -492,75 +562,70 @@ export default function WarisRekodKemajuan() {
           </div>
         ) : (
           <>
-            {/* Student Avatar Profile Box */}
-            <div className="bg-white rounded-3xl border border-slate-200/80 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] p-6 mb-8 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
-
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                <div className="flex items-start md:items-center gap-5">
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-black text-xl shadow-md shrink-0">
-                    {pelajarInfo?.NamaPelajar
-                      ? pelajarInfo.NamaPelajar.substring(0, 2).toUpperCase()
-                      : "MI"}
-                  </div>
-                  <div className="space-y-1">
-                    <div className="flex flex-wrap items-center gap-3">
-                      <h3 className="text-lg font-extrabold text-slate-900">
-                        {pelajarInfo?.NamaPelajar}
-                      </h3>
-                      <span
-                        className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold border ${getStatusColor(pelajarInfo?.statusHafazan || "")}`}
-                      >
-                        <span className="w-1.5 h-1.5 rounded-full bg-current mr-1.5 animate-pulse"></span>
-                        {pelajarInfo?.statusHafazan}
-                      </span>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-y-1 gap-x-4 text-xs text-slate-500 font-medium">
-                      <span className="flex items-center gap-1.5">
-                        <strong className="font-bold text-slate-700">
-                          ID Pelajar:
-                        </strong>{" "}
-                        {pelajarInfo?.IDPelajar}
-                      </span>
-                      <span className="hidden md:inline text-slate-300">•</span>
-                      <span className="flex items-center gap-1.5">
-                        <strong className="font-bold text-slate-700">
-                          Kelas:
-                        </strong>{" "}
-                        {pelajarInfo?.Kelas} ({pelajarInfo?.Tingkatan})
-                      </span>
-                    </div>
-                  </div>
+            {/* Student Info Card */}
+            <div className="bg-blue-900 text-white rounded-xl shadow p-6 mb-6">
+              <div className="flex items-center gap-6">
+                {/* Avatar — swap src below when image is ready */}
+                {pelajarInfo?.avatarUrl ? (
+                  <img
+                    src={pelajarInfo.avatarUrl}
+                    alt={pelajarInfo.NamaPelajar}
+                    className="w-16 h-16 rounded-full object-cover ring-2 ring-white/30 flex-shrink-0"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).style.display =
+                        "none";
+                      (e.currentTarget
+                        .nextElementSibling as HTMLElement)!.style.display =
+                        "flex";
+                    }}
+                  />
+                ) : null}
+                <div
+                  className="w-16 h-16 rounded-full bg-white/15 ring-2 ring-white/30 items-center justify-center flex-shrink-0"
+                  style={{ display: pelajarInfo?.avatarUrl ? "none" : "flex" }}
+                >
+                  <span className="text-xl font-black text-white tracking-tight">
+                    {pelajarInfo?.NamaPelajar?.split(" ")
+                      .slice(0, 2)
+                      .map((w) => w[0])
+                      .join("")
+                      .toUpperCase()}
+                  </span>
                 </div>
 
-                <div className="flex items-center gap-4 lg:pl-6 lg:border-l border-slate-100 shrink-0">
-                  <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-500 shrink-0">
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                      />
-                    </svg>
+                {/* Details */}
+                <div className="flex-1 grid grid-cols-3 gap-x-6 gap-y-4">
+                  <div>
+                    <p className="text-xs text-blue-300 mb-1">Nama</p>
+                    <p className="font-semibold">{pelajarInfo?.NamaPelajar}</p>
                   </div>
                   <div>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                      Ustaz Halaqah Semasa
+                    <p className="text-xs text-blue-300 mb-1">
+                      No. Kad Pengenalan
                     </p>
-                    <p className="text-sm font-bold text-slate-700 mt-0.5">
-                      {pelajarInfo?.NamaGuru}
+                    <p className="font-semibold">{pelajarInfo?.IDPelajar}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-blue-300 mb-1">
+                      Status Hafazan Semasa
                     </p>
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(pelajarInfo?.statusHafazan || "")}`}
+                    >
+                      {pelajarInfo?.statusHafazan}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-xs text-blue-300 mb-1">Kelas</p>
+                    <p className="font-semibold">{pelajarInfo?.Kelas}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-blue-300 mb-1">Guru Halaqah</p>
+                    <p className="font-semibold">{pelajarInfo?.NamaGuru}</p>
                   </div>
                 </div>
               </div>
             </div>
-
             {/* Comprehensive Juzuk Progress Mapping Grid */}
             <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs mb-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
@@ -582,7 +647,7 @@ export default function WarisRekodKemajuan() {
                   </div>
                   <div>
                     <h3 className="text-base font-extrabold text-slate-900">
-                      Pemetaan Log Pencapaian Juzuk
+                      Pemetaan Log Pencapaian Juzuk Keseluruhan
                     </h3>
                     <p className="text-xs font-medium text-slate-400 mt-0.5">
                       Sasaran Tahunan Keseluruhan: {sasaran.SasaranJuzuk} Juzuk
@@ -592,13 +657,19 @@ export default function WarisRekodKemajuan() {
                 </div>
                 <div className="text-right">
                   <span className="text-2xl font-black text-indigo-600">
-                    {currentJuzuk}{" "}
+                    {allTimeTotalJuzukHB}{" "}
                     <span className="text-xs font-bold text-slate-400">
                       / {sasaran.SasaranJuzuk} Juzuk
                     </span>
                   </span>
                   <div className="text-[11px] font-bold text-emerald-600 mt-0.5">
-                    {Math.round(juzukProgress)}% Selesai Dihafaz
+                    {Math.round(
+                      Math.min(
+                        (allTimeTotalJuzukHB / sasaran.SasaranJuzuk) * 100,
+                        100,
+                      ),
+                    )}
+                    % Selesai Dihafaz
                   </div>
                 </div>
               </div>
@@ -606,29 +677,29 @@ export default function WarisRekodKemajuan() {
               {/* Programmatic Grid Framework mimicking original matrix structure */}
               <div className="grid grid-cols-6 sm:grid-cols-10 lg:grid-cols-30 gap-2 mt-5">
                 {Array.from({ length: 30 }).map((_, index) => {
-                  const currentBlockNumber = index + 1;
-                  const isDone = currentBlockNumber <= currentJuzuk;
+                  const num = index + 1;
+                  const isDone = allTimeCompletedJuzukSet.has(num);
                   return (
                     <div
-                      key={currentBlockNumber}
-                      className={`aspect-square flex flex-col items-center justify-center rounded-xl text-xs font-bold transition-all border ${
+                      key={num}
+                      title={`Juzuk ${num}: ${isDone ? "Selesai" : "Belum Selesai"}`}
+                      className={`aspect-square flex items-center justify-center rounded-xl text-xs font-bold transition-all border ${
                         isDone
-                          ? "bg-indigo-600 text-white border-indigo-600 shadow-xs shadow-indigo-600/20"
-                          : "bg-slate-50 text-slate-400 border-slate-200/70 hover:border-slate-300"
+                          ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
+                          : "bg-slate-50 text-slate-400 border-slate-200 hover:border-slate-300"
                       }`}
-                      title={`Juzuk ${currentBlockNumber}: ${isDone ? "Selesai" : "Belum Selesai"}`}
                     >
-                      <span>{currentBlockNumber}</span>
+                      {num}
                     </div>
                   );
                 })}
               </div>
             </div>
 
-            {/* Analytics Summary Modules (3-Column Layout with Integrated Canvas Instances) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            {/* Analytics Modules */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
               {/* Module 1: Hafazan Baru */}
-              <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs flex flex-col justify-between">
+              <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm flex flex-col justify-between">
                 <div className="flex justify-between items-start mb-2">
                   <div>
                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
@@ -638,14 +709,27 @@ export default function WarisRekodKemajuan() {
                       Hafazan Baru
                     </h4>
                   </div>
-                  <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg">
+                  <span className="text-xs font-bold text-fuchsia-600 bg-fuchsia-50 px-2.5 py-1 rounded-lg">
                     Bulan Ini
                   </span>
                 </div>
-
                 <div className="grid grid-cols-2 items-center gap-4 py-3">
-                  <div className="h-28 w-28 relative mx-auto">
+                  <div
+                    className="h-28 w-28 relative mx-auto cursor-pointer"
+                    onMouseEnter={() => setHafazanHover(true)}
+                    onMouseLeave={() => setHafazanHover(false)}
+                  >
                     <canvas ref={hafazanChartRef}></canvas>
+                    {hafazanHover && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/90 rounded-full text-center pointer-events-none">
+                        <span className="text-sm font-black text-fuchsia-600">
+                          {totalHafazanMuka}
+                        </span>
+                        <span className="text-[10px] font-bold text-slate-400">
+                          / {totalPagesInJuzuk} Muka
+                        </span>
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <div>
@@ -664,8 +748,7 @@ export default function WarisRekodKemajuan() {
                         Baki Sasaran
                       </p>
                       <p className="text-sm font-bold text-slate-500">
-                        {Math.max(0, sasaran.SasaranMuka - totalHafazanMuka)}{" "}
-                        Muka
+                        {Math.max(0, totalPagesInJuzuk - totalHafazanMuka)} Muka
                       </p>
                     </div>
                   </div>
@@ -679,7 +762,7 @@ export default function WarisRekodKemajuan() {
               </div>
 
               {/* Module 2: Murajaah Baru */}
-              <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs flex flex-col justify-between">
+              <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm flex flex-col justify-between">
                 <div className="flex justify-between items-start mb-2">
                   <div>
                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
@@ -693,10 +776,23 @@ export default function WarisRekodKemajuan() {
                     Bulan Ini
                   </span>
                 </div>
-
                 <div className="grid grid-cols-2 items-center gap-4 py-3">
-                  <div className="h-28 w-28 relative mx-auto">
+                  <div
+                    className="h-28 w-28 relative mx-auto cursor-pointer"
+                    onMouseEnter={() => setMbHover(true)}
+                    onMouseLeave={() => setMbHover(false)}
+                  >
                     <canvas ref={mbChartRef}></canvas>
+                    {mbHover && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/90 rounded-full text-center pointer-events-none">
+                        <span className="text-sm font-black text-indigo-600">
+                          {totalMBMuka}
+                        </span>
+                        <span className="text-[10px] font-bold text-slate-400">
+                          / {totalHafazanMuka} Muka
+                        </span>
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <div>
@@ -715,21 +811,21 @@ export default function WarisRekodKemajuan() {
                         Baki Sasaran
                       </p>
                       <p className="text-sm font-bold text-slate-500">
-                        {Math.max(0, sasaran.SasaranMuka - totalMBMuka)} Muka
+                        {Math.max(0, totalHafazanMuka - totalMBMuka)} Muka
                       </p>
                     </div>
                   </div>
                 </div>
                 <div className="text-[11px] font-semibold text-slate-400 mt-2 pt-3 border-t border-slate-50 truncate">
-                  Juzuk Semasa:{" "}
+                  Muka Surat Semasa:{" "}
                   <strong className="font-bold text-slate-700">
-                    Juzuk {currentJuzuk || "-"}
+                    {latestMBMuka || "-"}
                   </strong>
                 </div>
               </div>
 
               {/* Module 3: Murajaah Lama */}
-              <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs flex flex-col justify-between">
+              <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm flex flex-col justify-between">
                 <div className="flex justify-between items-start mb-2">
                   <div>
                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
@@ -739,14 +835,27 @@ export default function WarisRekodKemajuan() {
                       Murajaah Lama
                     </h4>
                   </div>
-                  <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-lg">
+                  <span className="text-xs font-bold text-[#c20071]/80 bg-[#c20071]/20 px-2.5 py-1 rounded-lg">
                     Bulan Ini
                   </span>
                 </div>
-
                 <div className="grid grid-cols-2 items-center gap-4 py-3">
-                  <div className="h-28 w-28 relative mx-auto">
+                  <div
+                    className="h-28 w-28 relative mx-auto cursor-pointer"
+                    onMouseEnter={() => setMlHover(true)}
+                    onMouseLeave={() => setMlHover(false)}
+                  >
                     <canvas ref={mlChartRef}></canvas>
+                    {mlHover && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/90 rounded-full text-center pointer-events-none">
+                        <span className="text-sm font-black text-[#c20071]/80">
+                          {totalMLMuka}
+                        </span>
+                        <span className="text-[10px] font-bold text-slate-400">
+                          / {totalHafazanMuka} Muka
+                        </span>
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <div>
@@ -765,21 +874,19 @@ export default function WarisRekodKemajuan() {
                         Baki Sasaran
                       </p>
                       <p className="text-sm font-bold text-slate-500">
-                        {Math.max(0, sasaran.SasaranMuka * 20 - totalMLMuka)}{" "}
-                        Muka
+                        {Math.max(0, totalHafazanMuka - totalMLMuka)} Muka
                       </p>
                     </div>
                   </div>
                 </div>
                 <div className="text-[11px] font-semibold text-slate-400 mt-2 pt-3 border-t border-slate-50 truncate">
-                  Log M/S Dalam Juzuk:{" "}
+                  Muka Surat Semasa:{" "}
                   <strong className="font-bold text-slate-700">
-                    {currentMukaDalamJuzuk} / {totalPagesInJuzuk} Muka
+                    {latestMLMuka}
                   </strong>
                 </div>
               </div>
             </div>
-
             {/* Monthly Teacher Remarks Module */}
             <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-xs mb-8">
               <h3 className="text-base font-extrabold text-slate-900 mb-4 flex items-center gap-2">
@@ -844,127 +951,155 @@ export default function WarisRekodKemajuan() {
                 </span>
               </div>
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="bg-slate-50/70 border-b border-slate-100 text-[11px] font-black text-slate-400 uppercase tracking-wider">
-                      <th className="py-4 px-6">Tarikh</th>
-                      <th className="py-4 px-6">Jenis Bacaan</th>
-                      <th className="py-4 px-4 text-center">M/S Mula</th>
-                      <th className="py-4 px-4 text-center">M/S Tamat</th>
-                      <th className="py-4 px-6">Surah</th>
-                      <th className="py-4 px-4 text-center">Juzuk</th>
-                      <th className="py-4 px-6 text-right">
-                        Pencapaian / Ulasan
+              {/* Rekod Harian Table */}
+              <div className="bg-white rounded-xl shadow overflow-hidden">
+                <div className="px-6 py-4 border-b flex justify-between items-center">
+                  <h3 className="font-bold text-gray-700">Rekod Harian</h3>
+                  <span className="text-xs text-gray-400 bg-gray-100 px-3 py-1 rounded-full">
+                    {rekodList.length} rekod
+                  </span>
+                </div>
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 border-b">
+                    <tr>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                        Tarikh
+                      </th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                        Jenis
+                      </th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                        M/Surat Mula
+                      </th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                        M/Surat Tamat
+                      </th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                        Surah
+                      </th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                        Juzuk
+                      </th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                        Ulasan
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 text-sm font-medium text-slate-700">
-                    {rekodFiltered.length === 0 ? (
+                  <tbody>
+                    {rekodList.length === 0 ? (
                       <tr>
                         <td
                           colSpan={7}
-                          className="text-center py-12 text-slate-400 font-bold tracking-tight"
+                          className="text-center py-10 text-gray-400"
                         >
-                          Tiada sebarang rekod mutabaah aktif dijumpai untuk
-                          bulan ini.
+                          Tiada rekod ditemui
                         </td>
                       </tr>
                     ) : (
-                      rekodFiltered.map((rekod) => (
+                      rekodList.map((rekod, index) => (
                         <Fragment key={rekod.RekodID}>
-                          {/* Hafazan Sub-row Evaluation */}
                           {rekod.HBmula > 0 && (
-                            <tr className="hover:bg-slate-50/50 transition-colors">
-                              <td className="py-4 px-6 font-bold text-slate-900 whitespace-nowrap">
+                            <tr
+                              key={`hb-${rekod.RekodID}`}
+                              className="border-b border-gray-50 hover:bg-gray-50 transition"
+                            >
+                              <td className="px-4 py-3 text-gray-700 text-s">
                                 {formatTarikh(rekod.Tarikh)}
                               </td>
-                              <td className="py-4 px-6 whitespace-nowrap">
-                                <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
+                              <td className="px-4 py-3">
+                                <span
+                                  className={`px-2 py-1 rounded-full text-xs font-semibold ${getJenisColor("Hafazan")}`}
+                                >
                                   Hafazan
                                 </span>
                               </td>
-                              <td className="py-4 px-4 text-center font-semibold text-slate-500">
+                              <td className="px-4 py-3 text-gray-600">
                                 {rekod.HBmula}
                               </td>
-                              <td className="py-4 px-4 text-center font-semibold text-slate-500">
+                              <td className="px-4 py-3 text-gray-600">
                                 {rekod.HBakhir}
                               </td>
-                              <td className="py-4 px-6 font-semibold text-slate-800">
+                              <td className="px-4 py-3 text-gray-700 font-medium">
                                 {rekod.NamaSurahHB}
                               </td>
-                              <td className="py-4 px-4 text-center font-bold text-indigo-600">
+                              <td className="px-4 py-3 text-gray-600">
                                 {rekod.JuzukHB}
                               </td>
-                              <td className="py-4 px-6 text-right whitespace-nowrap">
+                              <td className="px-4 py-3">
                                 <span
-                                  className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold ${getUlasanColor(rekod.Pencapaian)}`}
+                                  className={`px-2 py-1 rounded text-xs font-semibold ${getUlasanColor(rekod.Pencapaian)}`}
                                 >
                                   {rekod.Pencapaian}
                                 </span>
                               </td>
                             </tr>
                           )}
-
-                          {/* Murajaah Baru Sub-row Evaluation */}
                           {rekod.MBmula > 0 && (
-                            <tr className="hover:bg-slate-50/50 transition-colors">
-                              <td className="py-4 px-6 font-bold text-slate-900 whitespace-nowrap">
+                            <tr
+                              key={`mb-${rekod.RekodID}`}
+                              className="border-b border-gray-50 hover:bg-gray-50 transition"
+                            >
+                              <td className="px-4 py-3 text-gray-700 text-s">
                                 {formatTarikh(rekod.Tarikh)}
                               </td>
-                              <td className="py-4 px-6 whitespace-nowrap">
-                                <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                              <td className="px-4 py-3">
+                                <span
+                                  className={`px-2 py-1 rounded-full text-xs font-semibold ${getJenisColor("Murajaah Baru")}`}
+                                >
                                   Murajaah Baru
                                 </span>
                               </td>
-                              <td className="py-4 px-4 text-center font-semibold text-slate-500">
+                              <td className="px-4 py-3 text-gray-600">
                                 {rekod.MBmula}
                               </td>
-                              <td className="py-4 px-4 text-center font-semibold text-slate-500">
+                              <td className="px-4 py-3 text-gray-600">
                                 {rekod.MBakhir}
                               </td>
-                              <td className="py-4 px-6 font-semibold text-slate-800">
+                              <td className="px-4 py-3 text-gray-700 font-medium">
                                 {rekod.NamaSurahMB}
                               </td>
-                              <td className="py-4 px-4 text-center font-bold text-indigo-600">
+                              <td className="px-4 py-3 text-gray-600">
                                 {rekod.JuzukMB}
                               </td>
-                              <td className="py-4 px-6 text-right whitespace-nowrap">
+                              <td className="px-4 py-3">
                                 <span
-                                  className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold ${getUlasanColor(rekod.Pencapaian)}`}
+                                  className={`px-2 py-1 rounded text-xs font-semibold ${getUlasanColor(rekod.Pencapaian)}`}
                                 >
                                   {rekod.Pencapaian}
                                 </span>
                               </td>
                             </tr>
                           )}
-
-                          {/* Murajaah Lama Sub-row Evaluation */}
                           {rekod.MLmula > 0 && (
-                            <tr className="hover:bg-slate-50/50 transition-colors">
-                              <td className="py-4 px-6 font-bold text-slate-900 whitespace-nowrap">
+                            <tr
+                              key={`ml-${rekod.RekodID}`}
+                              className="border-b border-gray-50 hover:bg-gray-50 transition"
+                            >
+                              <td className="px-4 py-3 text-gray-700 text-s">
                                 {formatTarikh(rekod.Tarikh)}
                               </td>
-                              <td className="py-4 px-6 whitespace-nowrap">
-                                <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-50 text-amber-700 border border-amber-100">
+                              <td className="px-4 py-3">
+                                <span
+                                  className={`px-2 py-1 rounded-full text-xs font-semibold ${getJenisColor("Murajaah Lama")}`}
+                                >
                                   Murajaah Lama
                                 </span>
                               </td>
-                              <td className="py-4 px-4 text-center font-semibold text-slate-500">
+                              <td className="px-4 py-3 text-gray-600">
                                 {rekod.MLmula}
                               </td>
-                              <td className="py-4 px-4 text-center font-semibold text-slate-500">
+                              <td className="px-4 py-3 text-gray-600">
                                 {rekod.MLakhir}
                               </td>
-                              <td className="py-4 px-6 font-semibold text-slate-800">
+                              <td className="px-4 py-3 text-gray-700 font-medium">
                                 {rekod.NamaSurahML}
                               </td>
-                              <td className="py-4 px-4 text-center font-bold text-indigo-600">
+                              <td className="px-4 py-3 text-gray-600">
                                 {rekod.JuzukML}
                               </td>
-                              <td className="py-4 px-6 text-right whitespace-nowrap">
+                              <td className="px-4 py-3">
                                 <span
-                                  className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold ${getUlasanColor(rekod.Pencapaian)}`}
+                                  className={`px-2 py-1 rounded text-xs font-semibold ${getUlasanColor(rekod.Pencapaian)}`}
                                 >
                                   {rekod.Pencapaian}
                                 </span>
