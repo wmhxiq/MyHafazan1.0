@@ -3,6 +3,7 @@ import { Resend } from 'resend'
 import { renderToBuffer } from '@react-pdf/renderer'
 import { createElement } from 'react'
 import LaporanPDF from '@/app/components/LaporanPDF'
+import { generateLaporanBuffer } from '@/lib/getPdfBuffer'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -30,30 +31,28 @@ export async function POST(req: NextRequest) {
     } = body
 
     // 1. Generate PDF buffer
-const pdfBuffer = await renderToBuffer(
-  createElement(LaporanPDF, {
-    namaMurid,
-    noKP,
-    kelas,
-    namaGuru,
-    bulan,
-    tahun,
-    juzukSemasa,
-    sasaranJuzuk,
-    hafazanTerkini,
-    totalPagesInJuzuk,
-    totalMBMuka,
-    totalMLMuka,
-    statusHafazan,
-    ulasanGuru,
-    rekodList,
-  }) as any // Add 'as any' here
-)
+const pdfBuffer = await generateLaporanBuffer({
+  namaMurid,
+  noKP,
+  kelas,
+  namaGuru,
+  bulan,
+  tahun,
+  juzukSemasa,
+  sasaranJuzuk,
+  hafazanTerkini,
+  totalPagesInJuzuk,
+  totalMBMuka,
+  totalMLMuka,
+  statusHafazan,
+  ulasanGuru,
+  rekodList,
+})
     
 
     // 2. Send email with PDF attachment
     const { data, error } = await resend.emails.send({
-      from: 'MyHafazan <onboarding@resend.dev>', // change to your domain later
+      from: 'MyHafazan <noreply@myhafazan.tech>', // current domain
       to: [emelWaris],
       subject: `Laporan Hafazan Bulanan - ${namaMurid} (${bulan} ${tahun})`,
       html: `

@@ -2,6 +2,15 @@
 import { useEffect, useState } from "react";
 import AdminSidebar from "@/app/components/AdminSidebar";
 import { supabase } from "@/lib/supabase";
+import AlertModal from "@/app/components/AlertModal";
+
+import {
+  IconEdit,
+  IconSearch,
+  IconFilter,
+  IconPlus,
+  IconTrash,
+} from "@/app/components/icons";
 
 type Kelas = {
   NamaKelas: string;
@@ -30,6 +39,50 @@ export default function SenaraiKelas() {
   const [selectedKelas, setSelectedKelas] = useState<Kelas | null>(null);
   const [pelajarInKelas, setPelajarInKelas] = useState<Pelajar[]>([]);
   const [tingkatanFilter, setTingkatanFilter] = useState("Semua");
+
+  const [modalConfig, setModalConfig] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "info" as "info" | "success" | "error" | "warning",
+    confirmText: "Baik",
+    cancelText: "Batal",
+    onConfirm: undefined as (() => void) | undefined,
+    showCancel: false,
+    autoClose: false,
+    autoCloseDuration: 5000,
+  });
+
+  const triggerAlert = (
+    title: string,
+    message: string,
+    type: "info" | "success" | "error" | "warning" = "info",
+    options?: {
+      confirmText?: string;
+      cancelText?: string;
+      showCancel?: boolean;
+      onConfirm?: () => void;
+      autoClose?: boolean;
+      autoCloseDuration?: number;
+    },
+  ) => {
+    setModalConfig({
+      isOpen: true,
+      title,
+      message,
+      type,
+      confirmText: options?.confirmText || "Baik",
+      cancelText: options?.cancelText || "Batal",
+      onConfirm: options?.onConfirm,
+      showCancel: options?.showCancel || false,
+      autoClose: options?.autoClose || false,
+      autoCloseDuration: options?.autoCloseDuration || 5000,
+    });
+  };
+
+  const closeModal = () => {
+    setModalConfig((prev) => ({ ...prev, isOpen: false }));
+  };
 
   useEffect(() => {
     fetchKelas();
@@ -67,19 +120,37 @@ export default function SenaraiKelas() {
   }
 
   async function deleteKelas(namaKelas: string) {
-    const confirm = window.confirm(
+    triggerAlert(
+      "Perhatian",
       "Adakah anda pasti mahu memadam kelas ini? Semua pelajar dalam kelas ini akan terjejas.",
+      "warning", // Changed from "info" to "warning" for delete confirmation
+      {
+        showCancel: true,
+        confirmText: "Ya, Padam",
+        cancelText: "Batal",
+        onConfirm: async () => {
+          // This code runs only when user clicks "Confirm"
+          const { error } = await supabase
+            .from("Kelas")
+            .delete()
+            .eq("NamaKelas", namaKelas);
+
+          if (error) {
+            triggerAlert("Ralat", "Gagal memadam rekod", "error");
+            return;
+          }
+
+          // Success message
+          triggerAlert("Berjaya!", "Kelas telah dipadam.", "success", {
+            autoClose: true,
+            autoCloseDuration: 2000,
+          });
+
+          // Refresh the data
+          fetchKelas();
+        },
+      },
     );
-    if (!confirm) return;
-    const { error } = await supabase
-      .from("Kelas")
-      .delete()
-      .eq("NamaKelas", namaKelas);
-    if (error) {
-      alert("Gagal memadam: " + error.message);
-      return;
-    }
-    fetchKelas();
   }
 
   function handleViewPelajar(kelas: Kelas) {
@@ -108,7 +179,10 @@ export default function SenaraiKelas() {
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-xl font-bold text-indigo-800">Senarai Kelas</h1>
+            <h1 className="text-2xl font-semibold text-indigo-900">
+              Senarai Kelas
+            </h1>
+
             <p className="text-sm text-gray-500">
               Jumlah Kelas: {kelasList.length}
             </p>
@@ -118,9 +192,10 @@ export default function SenaraiKelas() {
               setEditData(null);
               setShowForm(true);
             }}
-            className="bg-blue-900 text-white px-4 py-2 rounded text-sm hover:bg-blue-800"
+            className="add-btn"
           >
-            + Tambah Kelas
+            <span>Tambah Kelas</span>
+            <IconPlus />
           </button>
         </div>
 
@@ -178,59 +253,91 @@ export default function SenaraiKelas() {
           ))}
         </div>
 
-        {/* Kelas Cards Grouped by Tingkatan */}
+        {/* Kelas Table Grouped by Tingkatan */}
         {TINGKATAN_OPTIONS.map((tingkatan) => {
           const classes = grouped[tingkatan];
           if (classes.length === 0) return null;
+
           return (
-            <div key={tingkatan} className="mb-6">
+            <div key={tingkatan} className="mb-8">
               <h2 className="text-sm font-semibold text-gray-500 mb-3 uppercase tracking-wide">
                 {tingkatan}
               </h2>
-              <div className="grid grid-cols-3 gap-4">
-                {classes.map((kelas) => (
-                  <div
-                    key={kelas.NamaKelas}
-                    className="bg-white rounded-lg shadow p-4"
-                  >
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <p className="font-bold text-gray-800">
+
+              <div className="bg-white rounded-lg shadow overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 border-b">
+                    <tr>
+                      <th className="text-left px-4 py-3 font-semibold text-gray-600">
+                        Nama Kelas
+                      </th>
+                      <th className="text-left px-4 py-3 font-semibold text-gray-600">
+                        Tingkatan
+                      </th>
+                      <th className="text-left px-4 py-3 font-semibold text-gray-600">
+                        Pelajar
+                      </th>
+                      <th className="text-right px-4 py-3 font-semibold text-gray-600">
+                        Tindakan
+                      </th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {classes.map((kelas, index) => (
+                      <tr
+                        key={kelas.NamaKelas}
+                        className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                      >
+                        {/* Nama Kelas */}
+                        <td className="px-4 py-3 font-medium text-gray-800">
                           {kelas.NamaKelas}
-                        </p>
-                        <p className="text-xs text-gray-400">
+                        </td>
+
+                        {/* Tingkatan */}
+                        <td className="px-4 py-3 text-gray-600">
                           {kelas.Tingkatan}
-                        </p>
-                      </div>
-                      <span className="bg-blue-100 text-blue-700 text-xs font-semibold px-2 py-1 rounded">
-                        {kelas.jumlahPelajar} pelajar
-                      </span>
-                    </div>
-                    <div className="flex gap-2 mt-2">
-                      <button
-                        onClick={() => handleViewPelajar(kelas)}
-                        className="flex-1 bg-blue-900 text-white text-xs py-1.5 rounded hover:bg-blue-800"
-                      >
-                        Lihat Pelajar
-                      </button>
-                      <button
-                        onClick={() => {
-                          setEditData(kelas);
-                          setShowForm(true);
-                        }}
-                        className="bg-blue-100 text-blue-700 px-2 py-1.5 rounded hover:bg-blue-200 text-xs"
-                      >
-                        ✏️
-                      </button>
-                      <button
-                        onClick={() => deleteKelas(kelas.NamaKelas)}
-                        className="bg-red-100 text-red-700 px-2 py-1.5 rounded hover:bg-red-200 text-xs"
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                        </td>
+
+                        {/* Pelajar count */}
+                        <td className="px-4 py-3">
+                          <span className="bg-blue-100 text-blue-700 text-xs font-semibold px-2 py-1 rounded">
+                            {kelas.jumlahPelajar} pelajar
+                          </span>
+                        </td>
+
+                        {/* Actions */}
+                        <td className="px-4 py-3 text-right">
+                          <div className="flex justify-end gap-2">
+                            <button
+                              onClick={() => handleViewPelajar(kelas)}
+                              className="table-action-btn table-action-view"
+                            >
+                              Lihat Pelajar
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                setEditData(kelas);
+                                setShowForm(true);
+                              }}
+                              className="table-icon-btn table-action-edit"
+                            >
+                              <IconEdit />
+                            </button>
+
+                            <button
+                              onClick={() => deleteKelas(kelas.NamaKelas)}
+                              className="table-icon-btn table-action-delete"
+                            >
+                              <IconTrash />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           );
@@ -245,6 +352,7 @@ export default function SenaraiKelas() {
               fetchKelas();
               setShowForm(false);
             }}
+            triggerAlert={triggerAlert}
           />
         )}
 
@@ -324,6 +432,19 @@ export default function SenaraiKelas() {
           </div>
         )}
       </main>
+      <AlertModal
+        isOpen={modalConfig.isOpen}
+        onClose={closeModal}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        type={modalConfig.type}
+        confirmText={modalConfig.confirmText}
+        cancelText={modalConfig.cancelText}
+        onConfirm={modalConfig.onConfirm}
+        showCancel={modalConfig.showCancel}
+        autoClose={modalConfig.autoClose}
+        autoCloseDuration={modalConfig.autoCloseDuration}
+      />
     </div>
   );
 }
@@ -333,10 +454,17 @@ function KelasForm({
   editData,
   onClose,
   onSave,
+  triggerAlert,
 }: {
   editData: Kelas | null;
   onClose: () => void;
   onSave: () => void;
+  triggerAlert: (
+    title: string,
+    message: string,
+    type?: "info" | "success" | "error" | "warning",
+    options?: any,
+  ) => void;
 }) {
   const [namaKelas, setNamaKelas] = useState(editData?.NamaKelas || "");
   const [tingkatan, setTingkatan] = useState(
@@ -347,7 +475,7 @@ function KelasForm({
   async function handleSave() {
     // 1. Validation
     if (!namaKelas || !tingkatan) {
-      alert("Sila isi nama kelas dan tingkatan");
+      triggerAlert("Ralat", "Sila isi nama kelas dan tingkatan", "error");
       return;
     }
 
@@ -366,8 +494,10 @@ function KelasForm({
     // 3. Handle error
     if (error) {
       console.error("Supabase Error:", error);
-      alert(
+      triggerAlert(
+        "Ralat",
         "Gagal menyimpan: Sila pastikan nama kelas tidak sama dengan yang sedia ada.",
+        "error",
       );
       setLoading(false);
       return;

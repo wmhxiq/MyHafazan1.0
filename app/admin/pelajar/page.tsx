@@ -3,6 +3,21 @@ import { useEffect, useState } from "react";
 import AdminSidebar from "@/app/components/AdminSidebar";
 import { supabase } from "@/lib/supabase";
 import "./styles/pelajar.css";
+import ExportExcelButton from "@/app/components/ExportExcelButton";
+import { ExportConfigs } from "@/lib/exportExcel";
+import PhotoUpload from "@/app/components/PhotoUpload";
+import {
+  IconSearch,
+  IconFilter,
+  IconPlus,
+  IconEdit,
+  IconTrash,
+  IconChevronDown,
+  IconX,
+  IconUpload,
+  IconSave,
+} from "@/app/components/icons";
+import AlertModal from "@/app/components/AlertModal";
 
 type Pelajar = {
   IDPelajar: number;
@@ -10,9 +25,10 @@ type Pelajar = {
   Kelas: string;
   Tingkatan?: string;
   Alamat: string;
-  "No.TelWaris": string;
+  NoTelWaris: string;
   NamaWaris: string;
   EmelWaris: string;
+  FotoURL: string;
   IDGuru: number;
   status?: string;
   totalMuka?: number;
@@ -51,207 +67,6 @@ const TINGKATAN_SHORT = [
   "TINGKATAN 5",
 ];
 
-// SVG Icons
-const IconSearch = () => (
-  <svg
-    width="16"
-    height="16"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <circle cx="11" cy="11" r="8" />
-    <path d="m21 21-4.35-4.35" />
-  </svg>
-);
-const IconFilter = () => (
-  <svg
-    width="15"
-    height="15"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-  </svg>
-);
-const IconPlus = () => (
-  <svg
-    width="16"
-    height="16"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M12 5v14M5 12h14" />
-  </svg>
-);
-const IconEdit = () => (
-  <svg
-    width="14"
-    height="14"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-  </svg>
-);
-const IconTrash = () => (
-  <svg
-    width="14"
-    height="14"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <polyline points="3 6 5 6 21 6" />
-    <path d="M19 6l-1 14H6L5 6" />
-    <path d="M10 11v6M14 11v6" />
-    <path d="M9 6V4h6v2" />
-  </svg>
-);
-const IconUsers = () => (
-  <svg
-    width="20"
-    height="20"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-    <circle cx="9" cy="7" r="4" />
-    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-  </svg>
-);
-const IconTarget = () => (
-  <svg
-    width="20"
-    height="20"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <circle cx="12" cy="12" r="10" />
-    <circle cx="12" cy="12" r="6" />
-    <circle cx="12" cy="12" r="2" />
-  </svg>
-);
-const IconTrend = () => (
-  <svg
-    width="20"
-    height="20"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
-    <polyline points="16 7 22 7 22 13" />
-  </svg>
-);
-const IconBookOpen = () => (
-  <svg
-    width="20"
-    height="20"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
-    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
-  </svg>
-);
-const IconChevronDown = () => (
-  <svg
-    width="14"
-    height="14"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <polyline points="6 9 12 15 18 9" />
-  </svg>
-);
-const IconX = () => (
-  <svg
-    width="16"
-    height="16"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <line x1="18" y1="6" x2="6" y2="18" />
-    <line x1="6" y1="6" x2="18" y2="18" />
-  </svg>
-);
-const IconUpload = () => (
-  <svg
-    width="20"
-    height="20"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <polyline points="16 16 12 12 8 16" />
-    <line x1="12" y1="12" x2="12" y2="21" />
-    <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
-  </svg>
-);
-const IconSave = () => (
-  <svg
-    width="16"
-    height="16"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-    <polyline points="17 21 17 13 7 13 7 21" />
-    <polyline points="7 3 7 8 15 8" />
-  </svg>
-);
-
 export default function SenaraiPelajar() {
   const [pelajarList, setPelajarList] = useState<Pelajar[]>([]);
   const [filtered, setFiltered] = useState<Pelajar[]>([]);
@@ -264,6 +79,20 @@ export default function SenaraiPelajar() {
   const [showForm, setShowForm] = useState(false);
   const [editData, setEditData] = useState<Pelajar | null>(null);
   const [viewData, setViewData] = useState<Pelajar | null>(null);
+
+  // 1. Define modal alert state
+  const [modalConfig, setModalConfig] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "info" as "info" | "success" | "error" | "warning",
+    confirmText: "OK",
+    cancelText: "Batal",
+    onConfirm: undefined as (() => void) | undefined,
+    showCancel: false,
+    autoClose: false,
+    autoCloseDuration: 5000,
+  });
 
   useEffect(() => {
     fetchKelas();
@@ -309,6 +138,7 @@ export default function SenaraiPelajar() {
       .order("NamaPelajar");
     if (!pelajarData) return;
     const { data: sasaranData } = await supabase.from("Sasaran").select("*");
+
     const pelajarWithStatus = await Promise.all(
       pelajarData.map(async (pelajar) => {
         const kelasInfo = kelasList.find((k) => k.NamaKelas === pelajar.Kelas);
@@ -329,7 +159,16 @@ export default function SenaraiPelajar() {
         let status = "Belum Mencapai Sukatan";
         if (totalMuka > target) status = "Melebihi Sukatan";
         else if (totalMuka >= target) status = "Mencapai Sukatan";
-        return { ...pelajar, Tingkatan: tingkatan, status, totalMuka, target };
+
+        // Return with Guru info
+        return {
+          ...pelajar,
+          Tingkatan: tingkatan,
+          status,
+          totalMuka,
+          target,
+          NamaGuru: guru?.NamaGuru || "-", // Add Guru name
+        };
       }),
     );
     setPelajarList(pelajarWithStatus);
@@ -346,9 +185,23 @@ export default function SenaraiPelajar() {
       .delete()
       .eq("IDPelajar", id);
     if (error) {
-      alert("Gagal memadam: " + error.message);
+      triggerAlert("Gagal!", "Gagal memadam: " + error.message, "error");
       return;
     }
+    //delete picture from server
+    try {
+      await fetch(`/api/delete-profile?fileName=${id}.jpg`, {
+        method: "DELETE",
+      });
+    } catch (err) {
+      console.error("Failed to delete profile picture:", err);
+      // Don't show error to user as the database record is already deleted
+    }
+
+    triggerAlert("Berjaya!", "Pelajar berjaya dipadam.", "success", {
+      autoClose: true,
+      autoCloseDuration: 3000,
+    });
     fetchPelajar();
   }
 
@@ -357,19 +210,22 @@ export default function SenaraiPelajar() {
       case "Mencapai Sukatan":
         return {
           dot: "bg-amber-400",
-          badge: "bg-amber-50 text-amber-700 border border-amber-200",
+          badge:
+            "bg-amber-50 text-amber-700 border border-amber-200 rounded-md text-xs px-3  inline-flex items-center gap-1",
           label: "Mencapai",
         };
       case "Melebihi Sukatan":
         return {
           dot: "bg-emerald-400",
-          badge: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+          badge:
+            "bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-md text-xs px-3  inline-flex items-center gap-1",
           label: "Melebihi",
         };
       default:
         return {
-          dot: "bg-rose-400",
-          badge: "bg-rose-50 text-rose-700 border border-rose-200",
+          dot: "bg-rose-00",
+          badge:
+            "bg-rose-50 text-rose-700 border border-rose-200 rounded-md text-xs px-3  inline-flex items-center gap-1",
           label: "Belum Capai",
         };
     }
@@ -395,6 +251,39 @@ export default function SenaraiPelajar() {
       ? Math.round(((totalMelebihi + totalMencapai) / pelajarList.length) * 100)
       : 0;
 
+  // 2. Create trigger function
+  const triggerAlert = (
+    title: string,
+    message: string,
+    type: "info" | "success" | "error" | "warning" = "info",
+    options?: {
+      confirmText?: string;
+      cancelText?: string;
+      showCancel?: boolean;
+      onConfirm?: () => void;
+      autoClose?: boolean;
+      autoCloseDuration?: number;
+    },
+  ) => {
+    setModalConfig({
+      isOpen: true,
+      title,
+      message,
+      type,
+      confirmText: options?.confirmText || "OK",
+      cancelText: options?.cancelText || "Batal",
+      onConfirm: options?.onConfirm,
+      showCancel: options?.showCancel || false,
+      autoClose: options?.autoClose || false,
+      autoCloseDuration: options?.autoCloseDuration || 5000,
+    });
+  };
+
+  // 3. Create close function
+  const closeModal = () => {
+    setModalConfig((prev) => ({ ...prev, isOpen: false }));
+  };
+
   return (
     <>
       <div className="page-root flex min-h-screen main-bg">
@@ -403,14 +292,7 @@ export default function SenaraiPelajar() {
           {/* Page Header */}
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1
-                style={{
-                  fontSize: "22px",
-                  fontWeight: 800,
-                  color: "#1e1b4b",
-                  lineHeight: 1.2,
-                }}
-              >
+              <h1 className="text-2xl font-semibold text-indigo-900">
                 Senarai Pelajar
               </h1>
               <p style={{ fontSize: "13px", color: "#64748b", marginTop: 2 }}>
@@ -563,6 +445,15 @@ export default function SenaraiPelajar() {
                 <IconChevronDown />
               </span>
             </div>
+            {/* Excel Export Button */}
+            <ExportExcelButton
+              data={filtered}
+              config={ExportConfigs.pelajar}
+              onExport={() => console.log("Eksport Data Pelajar Berjaya")}
+              onError={(msg) =>
+                triggerAlert("Gagal!", "Gagal muat turun Excel." + msg, "error")
+              }
+            />
           </div>
 
           {/* Table */}
@@ -653,7 +544,7 @@ export default function SenaraiPelajar() {
                           .map((w) => w[0])
                           .join("")
                           .toUpperCase();
-                        const avatarUrl = `/img/${pelajar.IDPelajar}.jpg`;
+                        const avatarUrl = pelajar.FotoURL;
                         const sc = getStatusConfig(pelajar.status || "");
                         const progressPct = pelajar.target
                           ? Math.min(
@@ -678,29 +569,39 @@ export default function SenaraiPelajar() {
                                     gap: 10,
                                   }}
                                 >
-                                  <img
-                                    src={avatarUrl}
-                                    alt={pelajar.NamaPelajar}
-                                    className="avatar-circle border-4 border-blue-800 rounded-full"
-                                    style={{
-                                      padding: 0,
-                                      objectFit: "cover",
-                                      border: "2px solid #1e40af",
-                                    }}
-                                    onError={(e) => {
-                                      (
-                                        e.currentTarget as HTMLImageElement
-                                      ).style.display = "none";
-                                      (e.currentTarget
-                                        .nextElementSibling as HTMLElement)!.style.display =
-                                        "flex";
-                                    }}
-                                  />
-                                  <div
-                                    className="avatar-circle"
-                                    style={{ display: "none" }}
-                                  >
-                                    {initials}
+                                  {avatarUrl ? (
+                                    <img
+                                      src={avatarUrl}
+                                      alt={pelajar.NamaPelajar}
+                                      className="avatar-circle border-4 border-blue-800 rounded-full"
+                                      style={{
+                                        padding: 0,
+                                        objectFit: "cover",
+                                        border: "2px solid #1e40af",
+                                      }}
+                                      onError={(e) => {
+                                        (
+                                          e.currentTarget as HTMLImageElement
+                                        ).style.display = "none";
+                                        (e.currentTarget
+                                          .nextElementSibling as HTMLElement)!.style.display =
+                                          "flex";
+                                      }}
+                                    />
+                                  ) : (
+                                    <div className="avatar-circle">
+                                      {initials}
+                                    </div>
+                                  )}
+
+                                  <div>
+                                    <p
+                                      style={{
+                                        fontWeight: 600,
+                                        color: "#1e293b",
+                                        margin: 0,
+                                      }}
+                                    />
                                   </div>
                                 </div>
                                 <span
@@ -807,7 +708,7 @@ export default function SenaraiPelajar() {
                                 </button>
 
                                 <button
-                                  className="action-btn action-btn-edit"
+                                  className="table-icon-btn table-action-edit"
                                   onClick={() => {
                                     setEditData(pelajar);
                                     setShowForm(true);
@@ -817,7 +718,7 @@ export default function SenaraiPelajar() {
                                   <IconEdit />
                                 </button>
                                 <button
-                                  className="action-btn action-btn-delete"
+                                  className="table-icon-btn table-action-delete"
                                   onClick={() =>
                                     deletePelajar(pelajar.IDPelajar)
                                   }
@@ -847,6 +748,7 @@ export default function SenaraiPelajar() {
               fetchPelajar();
               setShowForm(false);
             }}
+            triggerAlert={triggerAlert}
           />
         )}
         {viewData && (
@@ -861,24 +763,44 @@ export default function SenaraiPelajar() {
             }}
           />
         )}
+        <AlertModal
+          isOpen={modalConfig.isOpen}
+          onClose={closeModal}
+          title={modalConfig.title}
+          message={modalConfig.message}
+          type={modalConfig.type}
+          confirmText={modalConfig.confirmText}
+          cancelText={modalConfig.cancelText}
+          onConfirm={modalConfig.onConfirm}
+          showCancel={modalConfig.showCancel}
+          autoClose={modalConfig.autoClose}
+          autoCloseDuration={modalConfig.autoCloseDuration}
+        />
       </div>
     </>
   );
 }
 
-// ─── Form Component ──────────────────────────────────────────────────────────
+// ─── Pelajar Form Component ──────────────────────────────────────────────────────────
 function PelajarForm({
   editData,
   stafList,
   kelasList,
   onClose,
   onSave,
+  triggerAlert,
 }: {
   editData: Pelajar | null;
   stafList: Staf[];
   kelasList: Kelas[];
   onClose: () => void;
   onSave: () => void;
+  triggerAlert: (
+    title: string,
+    message: string,
+    type: "info" | "success" | "error" | "warning",
+    options?: any,
+  ) => void;
 }) {
   const [idPelajar, setIdPelajar] = useState(
     editData?.IDPelajar ? String(editData.IDPelajar) : "",
@@ -888,7 +810,7 @@ function PelajarForm({
   const [alamat, setAlamat] = useState(editData?.Alamat || "");
   const [namaWaris, setNamaWaris] = useState(editData?.NamaWaris || "");
   const [noTelWaris, setNoTelWaris] = useState(
-    editData?.["No.TelWaris"] ? String(editData["No.TelWaris"]) : "",
+    editData?.["NoTelWaris"] ? String(editData["NoTelWaris"]) : "",
   );
   const [emelWaris, setEmelWaris] = useState(editData?.EmelWaris || "");
   const [idGuru, setIdGuru] = useState(
@@ -897,100 +819,88 @@ function PelajarForm({
   const [gambarProfil, setGambarProfil] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [fotoUrl, setFotoUrl] = useState(editData?.FotoURL || "");
 
   useEffect(() => {
-    if (editData?.IDPelajar) setPreviewUrl(`/img/${editData.IDPelajar}.jpg`);
+    if (editData?.IDPelajar) {
+      setPreviewUrl(editData.FotoURL);
+      setFotoUrl(editData.FotoURL);
+    }
   }, [editData]);
-
-  function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (
-      file.type !== "image/jpeg" &&
-      !file.name.toLowerCase().endsWith(".jpg")
-    ) {
-      alert("Hanya fail .jpg dibenarkan.");
-      e.target.value = "";
-      return;
-    }
-    if (file.size > 50 * 1024) {
-      alert("Saiz gambar mesti kurang daripada 50KB.");
-      e.target.value = "";
-      return;
-    }
-    setGambarProfil(file);
-    setPreviewUrl(URL.createObjectURL(file));
-  }
 
   async function handleSave() {
     if (!idPelajar || !nama || !kelas || !idGuru) {
-      alert(
-        "Sila isi semua maklumat yang diperlukan: No. KP, Nama, Kelas dan Guru Halaqah",
+      triggerAlert(
+        "Gagal!",
+        "Sila isi semua maklumat yang diperlukan: No. KP, Nama, Kelas dan Guru Halaqah.",
+        "error",
       );
       return;
     }
     const phoneRegex = /^[0-9]+$/;
     if (noTelWaris && !phoneRegex.test(noTelWaris)) {
-      alert(
-        "Gagal menyimpan: Sila pastikan No. Tel Waris hanya mengandungi nombor.",
+      triggerAlert(
+        "Gagal!",
+        "Sila pastikan No. Tel Waris hanya mengandungi nombor.",
+        "error",
       );
       return;
     }
     if (!phoneRegex.test(idPelajar)) {
-      alert(
-        "Gagal menyimpan: No. Kad Pengenalan hanya boleh mengandungi nombor.",
+      triggerAlert(
+        "Gagal!",
+        "No. Kad Pengenalan hanya boleh mengandungi nombor.",
+        "error",
       );
       return;
     }
     setLoading(true);
-    const { error } = editData
-      ? await supabase
-          .from("Pelajar")
-          .update({
+
+    try {
+      const { error } = editData
+        ? await supabase
+            .from("Pelajar")
+            .update({
+              NamaPelajar: nama,
+              Kelas: kelas,
+              Alamat: alamat,
+              NamaWaris: namaWaris,
+              NoTelWaris: noTelWaris,
+              EmelWaris: emelWaris,
+              IDGuru: Number(idGuru),
+              FotoURL: fotoUrl,
+            })
+            .eq("IDPelajar", editData.IDPelajar)
+        : await supabase.from("Pelajar").insert({
+            IDPelajar: Number(idPelajar),
             NamaPelajar: nama,
             Kelas: kelas,
             Alamat: alamat,
             NamaWaris: namaWaris,
-            "No.TelWaris": noTelWaris,
+            NoTelWaris: noTelWaris,
             EmelWaris: emelWaris,
             IDGuru: Number(idGuru),
-          })
-          .eq("IDPelajar", editData.IDPelajar)
-      : await supabase.from("Pelajar").insert({
-          IDPelajar: Number(idPelajar),
-          NamaPelajar: nama,
-          Kelas: kelas,
-          Alamat: alamat,
-          NamaWaris: namaWaris,
-          "No.TelWaris": Number(noTelWaris),
-          EmelWaris: emelWaris,
-          IDGuru: Number(idGuru),
-        });
-    if (error) {
-      alert("Gagal menyimpan: Sila pastikan maklumat yang diisi adalah tepat.");
-      setLoading(false);
-      return;
-    }
-    if (gambarProfil) {
-      try {
-        const formData = new FormData();
-        formData.append("file", gambarProfil);
-        formData.append("fileName", `${idPelajar}.jpg`);
-        const uploadRes = await fetch("/api/upload-profile", {
-          method: "POST",
-          body: formData,
-        });
-        const uploadData = await uploadRes.json();
-        if (!uploadRes.ok)
-          throw new Error(uploadData.error || "Gagal upload gambar");
-      } catch (err: any) {
-        alert(err.message);
-        setLoading(false);
-        return;
+            FotoURL: fotoUrl,
+          });
+      if (error) {
+        throw new Error(error.message);
       }
+
+      triggerAlert(
+        "Berjaya!",
+        editData
+          ? "Maklumat pelajar berjaya dikemaskini."
+          : "Pelajar baharu berjaya didaftarkan.",
+        "success",
+        { autoClose: true, autoCloseDuration: 3000 },
+      );
+
+      onSave();
+    } catch (err: any) {
+      triggerAlert("Gagal!", "Gagal menyimpan: " + err.message, "error");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-    onSave();
   }
 
   const initials = nama
@@ -1060,9 +970,9 @@ function PelajarForm({
               border: "1px solid #e2e8f0",
             }}
           >
-            {previewUrl ? (
+            {previewUrl || fotoUrl ? (
               <img
-                src={previewUrl}
+                src={previewUrl || fotoUrl}
                 alt="Profil"
                 style={{
                   width: 52,
@@ -1127,7 +1037,7 @@ function PelajarForm({
                 value={nama}
                 onChange={(e) => setNama(e.target.value)}
                 className="form-input"
-                placeholder="Nama pelajar..."
+                placeholder="cth : ALI BIN ABU"
               />
             </div>
             <div>
@@ -1137,6 +1047,7 @@ function PelajarForm({
                 onChange={(e) => setIdPelajar(e.target.value)}
                 disabled={!!editData}
                 className="form-input"
+                inputMode="numeric"
                 placeholder="cth: 050101XXXXXXX"
               />
             </div>
@@ -1147,31 +1058,15 @@ function PelajarForm({
             <label className="form-label">
               Gambar Profil (.jpg, maks 50KB)
             </label>
-            <label
-              className="upload-zone"
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: 6,
+            <PhotoUpload
+              id={editData?.IDPelajar ? String(editData.IDPelajar) : idPelajar}
+              type="pelajar"
+              currentUrl={fotoUrl}
+              onUploadComplete={(url) => {
+                setFotoUrl(url);
+                setPreviewUrl(url);
               }}
-            >
-              <div style={{ color: "#94a3b8" }}>
-                <IconUpload />
-              </div>
-              <span style={{ fontSize: 12, color: "#64748b", fontWeight: 600 }}>
-                Klik untuk pilih gambar
-              </span>
-              <span style={{ fontSize: 11, color: "#94a3b8" }}>
-                Fail JPG sahaja, saiz maksimum 50KB
-              </span>
-              <input
-                type="file"
-                accept=".jpg,image/jpeg"
-                onChange={handleImageChange}
-                style={{ display: "none" }}
-              />
-            </label>
+            />
           </div>
 
           {/* Section: Akademik */}
@@ -1313,7 +1208,7 @@ function PelajarDetailModal({
     .join("")
     .toUpperCase();
 
-  const avatarUrl = `/img/${pelajar.IDPelajar}.jpg`;
+  const avatarUrl = pelajar.FotoURL;
 
   const guru = stafList.find((s) => s.IDGuru === pelajar.IDGuru);
 
@@ -1374,20 +1269,26 @@ function PelajarDetailModal({
               marginBottom: 24,
             }}
           >
-            <img
-              src={avatarUrl}
-              alt={pelajar.NamaPelajar}
-              style={{
-                width: 80,
-                height: 80,
-                borderRadius: 16,
-                objectFit: "cover",
-                border: "3px solid white",
-              }}
-              onError={(e) => {
-                e.currentTarget.style.display = "none";
-              }}
-            />
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt={pelajar.NamaPelajar}
+                style={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: 16,
+                  objectFit: "cover",
+                  border: "3px solid white",
+                }}
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                }}
+              />
+            ) : (
+              <div className="avatar-circle" style={{ display: "none" }}>
+                {initials}
+              </div>
+            )}
 
             <div>
               <h3
@@ -1428,7 +1329,7 @@ function PelajarDetailModal({
 
             <DetailItem
               label="Nombor Telefon"
-              value={pelajar["No.TelWaris"] || "-"}
+              value={pelajar["NoTelWaris"] || "-"}
             />
 
             <DetailItem label="Emel Waris" value={pelajar.EmelWaris} />

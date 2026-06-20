@@ -171,7 +171,7 @@ export default function WarisRekodKemajuan() {
     const [pelajarRes, rekodRes, rekodAllTimeRes] = await Promise.all([
       supabase
         .from("Pelajar")
-        .select("IDPelajar, NamaPelajar, Kelas, IDGuru")
+        .select("IDPelajar, NamaPelajar, Kelas, IDGuru, FotoURL")
         .eq("IDPelajar", idPelajar)
         .single(),
       supabase
@@ -242,7 +242,7 @@ export default function WarisRekodKemajuan() {
       Tingkatan: tingkatan,
       NamaGuru: guruRes.data?.NamaGuru || "-",
       statusHafazan,
-      avatarUrl: `/img/${pelajar.IDPelajar}.jpg`,
+      avatarUrl: pelajar.FotoURL,
     });
 
     // ── ALL-TIME JUZUK GRID (uses full record history) ──────────────────
@@ -542,12 +542,14 @@ export default function WarisRekodKemajuan() {
 
       <main className="flex-1 min-w-0 overflow-y-auto px-4 py-8 md:p-8 lg:p-10">
         {/* Header Module */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-          <h1 className="text-2xl font-bold text-blue-900">
-            Rekod Kemajuan Pelajar
-          </h1>
+        <div className="flex flex-col gap-4 mb-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between">
+            <h1 className="text-2xl font-bold text-blue-900">
+              Rekod Kemajuan Pelajar
+            </h1>
+          </div>
 
-          <div className="inline-flex items-center ">
+          <div className="inline-flex items-center gap-4">
             <MonthPicker
               selectedMonth={selectedMonth}
               selectedYear={selectedYear}
@@ -920,7 +922,7 @@ export default function WarisRekodKemajuan() {
                       </strong>
                     </span>
                     <span className="text-indigo-600 font-bold">
-                      {pelajarInfo?.NamaGuru}
+                      Guru : {pelajarInfo?.NamaGuru}
                     </span>
                   </div>
                 </div>
@@ -942,8 +944,7 @@ export default function WarisRekodKemajuan() {
                     Log Rekod Semakan Harian
                   </h3>
                   <p className="text-xs font-medium text-slate-400 mt-0.5">
-                    Senarai terperinci mutabaah harian pelajar bagi bulan
-                    semasa.
+                    Senarai rekod harian pelajar bagi bulan semasa.
                   </p>
                 </div>
                 <span className="inline-flex items-center px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-bold self-start sm:self-auto">
@@ -953,14 +954,21 @@ export default function WarisRekodKemajuan() {
 
               {/* Rekod Harian Table */}
               <div className="bg-white rounded-xl shadow overflow-hidden">
-                <div className="px-6 py-4 border-b flex justify-between items-center">
+                <div className="px-6 py-4 flex justify-between items-center">
                   <h3 className="font-bold text-gray-700">Rekod Harian</h3>
                   <span className="text-xs text-gray-400 bg-gray-100 px-3 py-1 rounded-full">
                     {rekodList.length} rekod
                   </span>
                 </div>
                 <table className="w-full text-sm">
-                  <thead className="bg-gray-50 border-b">
+                  <thead
+                    className="bg-gray-100"
+                    style={{
+                      border: "none",
+                      outline: "none",
+                      boxShadow: "none",
+                    }}
+                  >
                     <tr>
                       <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                         Tarikh

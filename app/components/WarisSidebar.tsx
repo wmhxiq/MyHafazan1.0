@@ -17,7 +17,7 @@ export default function WarisSidebar() {
   }
 
   const navItems = [
-    { label: "DASHBOARD", href: "/waris/dashboard" },
+    { label: "HALAMAN UTAMA", href: "/waris/dashboard" },
     { label: "REKOD KEMAJUAN", href: "/waris/rekod-kemajuan" },
   ];
 

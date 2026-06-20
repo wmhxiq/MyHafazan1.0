@@ -1,4 +1,5 @@
 "use client";
+import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
@@ -17,21 +18,23 @@ export default function AdminSidebar() {
   }
 
   {
-    /*
-  useEffect(() => {
-    const session = getSession();
-    if (!session || session.peranan !== "Pentadbir") {
-      router.push("/login");
-      return;
-    }
-    setNamaAdmin(session.nama);
-  }, []);
+    useEffect(() => {
+      async function loadAdmin() {
+        if (!session?.user?.id) return;
 
-  function handleLogout() {
-    clearSession();
-    router.push("/login");
-  }
-  */
+        const { data } = await supabase
+          .from("Staf")
+          .select("NamaGuru")
+          .eq("IDGuru", session.user.id)
+          .single();
+
+        if (data) {
+          setNamaAdmin(data.NamaGuru);
+        }
+      }
+
+      loadAdmin();
+    }, [session]);
   }
 
   const navItems = [
@@ -69,7 +72,7 @@ export default function AdminSidebar() {
       <div className="flex items-center justify-between text-xs text-white-600 pb-2">
         {/* Wrap Name and Role in a column container */}
         <div className="flex flex-col w-full max-w-[200px]">
-          <span className="uppercase font-bold">{session?.user?.name}</span>
+          <span className="uppercase font-bold">{namaAdmin}</span>
           <span className="uppercase text-[10px] opacity-75">PENTADBIR</span>
         </div>
         <button onClick={handleLogout} className="hover:text-white ml-2">

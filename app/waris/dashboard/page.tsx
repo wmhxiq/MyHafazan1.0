@@ -46,6 +46,7 @@ export default function WarisHome() {
           IDPelajar,
           NamaPelajar,
           Kelas,
+          FotoURL,
           IDGuru
           `,
       )
@@ -80,7 +81,7 @@ export default function WarisHome() {
         .maybeSingle(),
     ]);
 
-    const avatarUrl = `/img/${pelajar.IDPelajar}.jpg`;
+    const avatarUrl = pelajar.FotoURL;
 
     setPelajarInfo({
       IDPelajar: pelajar.IDPelajar,
@@ -129,14 +130,10 @@ export default function WarisHome() {
       <main className="flex-1 p-6 md:p-10">
         {/* Header */}
         <div className="mb-8">
-          <p className="text-sm font-medium text-blue-700 mb-2">
-            Dashboard Waris
-          </p>
-
           <h1 className="text-3xl font-bold text-slate-800">Assalamualaikum</h1>
 
           <p className="text-slate-500 mt-2">
-            Pantau perkembangan hafazan murid dengan lebih mudah.
+            Semak rekod bulanan kemajuan pelajar.
           </p>
         </div>
 
@@ -274,7 +271,7 @@ export default function WarisHome() {
             {/* QUICK ACTION */}
             <div
               onClick={() => router.push("/waris/rekod-kemajuan")}
-              className="group relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 to-blue-950 p-8 cursor-pointer shadow-xl hover:scale-[1.01] transition-all duration-300"
+              className="group relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-700 to-blue-800 p-8 cursor-pointer shadow-xl hover:scale-[1.01] transition-all duration-300"
             >
               <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl" />
 

@@ -371,7 +371,7 @@ export default function SasaranPage() {
         <div className="mb-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
             <div>
-              <h1 className="text-2xl font-semibold text-gray-900">
+              <h1 className="text-2xl font-semibold text-indigo-900">
                 Tetapan Sasaran Hafazan
               </h1>
               <p className="text-gray-500 text-sm mt-1">

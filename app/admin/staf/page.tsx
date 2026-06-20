@@ -4,6 +4,10 @@ import { useEffect, useState } from "react";
 import AdminSidebar from "@/app/components/AdminSidebar";
 import { supabase } from "@/lib/supabase";
 import { hashPassword } from "@/lib/password";
+import PhotoUpload from "@/app/components/PhotoUpload";
+import { exportToExcel } from "@/lib/exportExcel";
+import ExportExcelButton from "@/app/components/ExportExcelButton";
+import { ExportConfigs } from "@/lib/exportExcel";
 
 import {
   IconEdit,
@@ -20,7 +24,7 @@ import {
   IconUsers,
 } from "@/app/components/icons";
 
-import "./styles/staff.css";
+//import "./styles/staff.css";
 
 type Staf = {
   IDGuru: string;
@@ -29,6 +33,7 @@ type Staf = {
   NoTel: string;
   Peranan: string;
   KataLaluan: string;
+  FotoURL: string;
   bil_halaqah?: number;
 };
 
@@ -114,14 +119,7 @@ export default function SenaraiStaf() {
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1
-                style={{
-                  fontSize: "22px",
-                  fontWeight: 800,
-                  color: "#1e1b4b",
-                  lineHeight: 1.2,
-                }}
-              >
+              <h1 className="text-2xl font-semibold text-indigo-900">
                 Senarai Staf
               </h1>
 
@@ -422,37 +420,54 @@ export default function SenaraiStaf() {
               gap: 10,
               flexWrap: "wrap",
               alignItems: "center",
+              justifyContent: "space-between",
             }}
           >
-            <div className="search-wrap">
-              <span className="search-icon">
-                <IconSearch />
-              </span>
+            <div
+              style={{
+                display: "flex",
+                gap: 10,
+                flexWrap: "wrap",
+                alignItems: "center",
+              }}
+            >
+              <div className="search-wrap">
+                <span className="search-icon">
+                  <IconSearch />
+                </span>
 
-              <input
-                type="text"
-                placeholder="Cari nama staf..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="search-input"
-              />
+                <input
+                  type="text"
+                  placeholder="Cari nama staf..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="search-input"
+                />
+              </div>
+
+              <div className="filter-select-wrap">
+                <select
+                  value={peranan}
+                  onChange={(e) => setPeranan(e.target.value)}
+                  className="filter-select"
+                >
+                  <option value="Semua">Semua Peranan</option>
+                  <option value="Guru">Guru</option>
+                  <option value="Pentadbir">Pentadbir</option>
+                </select>
+
+                <span className="chevron-icon">
+                  <IconChevronDown />
+                </span>
+              </div>
             </div>
-
-            <div className="filter-select-wrap">
-              <select
-                value={peranan}
-                onChange={(e) => setPeranan(e.target.value)}
-                className="filter-select"
-              >
-                <option value="Semua">Semua Peranan</option>
-                <option value="Guru">Guru</option>
-                <option value="Pentadbir">Pentadbir</option>
-              </select>
-
-              <span className="chevron-icon">
-                <IconChevronDown />
-              </span>
-            </div>
+            {/* Excel Export Button */}
+            <ExportExcelButton
+              data={filtered}
+              config={ExportConfigs.staf}
+              onExport={() => console.log("Eksport Staf Data Berjaya")}
+              onError={(msg) => alert(msg)}
+            />
           </div>
 
           {/* Table */}
@@ -545,7 +560,7 @@ export default function SenaraiStaf() {
                         .map((w) => w[0])
                         .join("")
                         .toUpperCase();
-                      const avatarUrl = `/img/${staf.IDGuru}.jpg?v=${staf.IDGuru}`;
+                      const avatarUrl = staf.FotoURL;
 
                       return (
                         <tr key={staf.IDGuru}>
@@ -557,30 +572,28 @@ export default function SenaraiStaf() {
                                 gap: 10,
                               }}
                             >
-                              <img
-                                src={avatarUrl}
-                                alt={staf.NamaGuru}
-                                className="avatar-circle border-4 border-blue-800 rounded-full"
-                                style={{
-                                  padding: 0,
-                                  objectFit: "cover",
-                                  border: "2px solid #1e40af",
-                                }}
-                                onError={(e) => {
-                                  (
-                                    e.currentTarget as HTMLImageElement
-                                  ).style.display = "none";
-                                  (e.currentTarget
-                                    .nextElementSibling as HTMLElement)!.style.display =
-                                    "flex";
-                                }}
-                              />
-                              <div
-                                className="avatar-circle"
-                                style={{ display: "none" }}
-                              >
-                                {initials}
-                              </div>
+                              {avatarUrl ? (
+                                <img
+                                  src={avatarUrl}
+                                  alt={staf.NamaGuru}
+                                  className="avatar-circle border-4 border-blue-800 rounded-full"
+                                  style={{
+                                    padding: 0,
+                                    objectFit: "cover",
+                                    border: "2px solid #1e40af",
+                                  }}
+                                  onError={(e) => {
+                                    (
+                                      e.currentTarget as HTMLImageElement
+                                    ).style.display = "none";
+                                    (e.currentTarget
+                                      .nextElementSibling as HTMLElement)!.style.display =
+                                      "flex";
+                                  }}
+                                />
+                              ) : (
+                                <div className="avatar-circle">{initials}</div>
+                              )}
 
                               <div>
                                 <p
@@ -722,30 +735,34 @@ function StafForm({
   const [gambarProfil, setGambarProfil] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [fotoUrl, setFotoUrl] = useState(editData?.FotoURL || "");
 
   useEffect(() => {
-    if (editData?.IDGuru) setPreviewUrl(`/img/${editData.IDGuru}.jpg`);
+    if (editData?.IDGuru) {
+      setPreviewUrl(editData.FotoURL);
+      setFotoUrl(editData.FotoURL);
+    }
   }, [editData]);
 
-  function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (
-      file.type !== "image/jpeg" &&
-      !file.name.toLowerCase().endsWith(".jpg")
-    ) {
-      alert("Hanya fail .jpg dibenarkan.");
-      e.target.value = "";
-      return;
-    }
-    if (file.size > 50 * 1024) {
-      alert("Saiz gambar mesti kurang daripada 50KB.");
-      e.target.value = "";
-      return;
-    }
-    setGambarProfil(file);
-    setPreviewUrl(URL.createObjectURL(file));
-  }
+  // function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+  //   const file = e.target.files?.[0];
+  //   if (!file) return;
+  //   if (
+  //     file.type !== "image/jpeg" &&
+  //     !file.name.toLowerCase().endsWith(".jpg")
+  //   ) {
+  //     alert("Hanya fail .jpg dibenarkan.");
+  //     e.target.value = "";
+  //     return;
+  //   }
+  //   if (file.size > 50 * 1024) {
+  //     alert("Saiz gambar mesti kurang daripada 50KB.");
+  //     e.target.value = "";
+  //     return;
+  //   }
+  //   setGambarProfil(file);
+  //   setPreviewUrl(URL.createObjectURL(file));
+  // }
 
   async function handleSave() {
     if (!nama || !idGuru) {
@@ -760,24 +777,24 @@ function StafForm({
       return;
     }
 
-    if (gambarProfil) {
-      try {
-        const formData = new FormData();
-        formData.append("file", gambarProfil);
-        formData.append("fileName", `${idGuru}.jpg`);
-        const uploadRes = await fetch("/api/upload-profile", {
-          method: "POST",
-          body: formData,
-        });
-        const uploadData = await uploadRes.json();
-        if (!uploadRes.ok)
-          throw new Error(uploadData.error || "Gagal upload gambar");
-      } catch (err: any) {
-        alert(err.message);
-        setLoading(false);
-        return;
-      }
-    }
+    // if (gambarProfil) {
+    //   try {
+    //     const formData = new FormData();
+    //     formData.append("file", gambarProfil);
+    //     formData.append("fileName", `${idGuru}.jpg`);
+    //     const uploadRes = await fetch("/api/upload-profile", {
+    //       method: "POST",
+    //       body: formData,
+    //     });
+    //     const uploadData = await uploadRes.json();
+    //     if (!uploadRes.ok)
+    //       throw new Error(uploadData.error || "Gagal upload gambar");
+    //   } catch (err: any) {
+    //     alert(err.message);
+    //     setLoading(false);
+    //     return;
+    //   }
+    // }
 
     // 2. Password validation for new staf
     if (!editData && !kataLaluan) {
@@ -801,6 +818,7 @@ function StafForm({
             AlamatGuru: alamat,
             NoTel: noTel,
             Peranan: peranan,
+            FotoURL: fotoUrl,
             ...(hashedPassword && { KataLaluan: hashedPassword }),
           })
           .eq("IDGuru", editData.IDGuru)
@@ -810,6 +828,7 @@ function StafForm({
           AlamatGuru: alamat,
           NoTel: noTel,
           Peranan: peranan,
+          FotoURL: fotoUrl,
           KataLaluan: hashedPassword!,
         });
 
@@ -901,9 +920,9 @@ function StafForm({
               border: "1px solid #e2e8f0",
             }}
           >
-            {previewUrl ? (
+            {previewUrl || fotoUrl ? (
               <img
-                src={previewUrl}
+                src={previewUrl || fotoUrl}
                 alt="Profil"
                 style={{
                   width: 52,
@@ -913,7 +932,8 @@ function StafForm({
                   border: "2px solid #e2e8f0",
                 }}
                 onError={(e) => {
-                  setPreviewUrl(null);
+                  //setPreviewUrl(null);
+                  (e.currentTarget as HTMLImageElement).style.display = "none";
                 }}
               />
             ) : (
@@ -997,10 +1017,8 @@ function StafForm({
 
           {/* Gambar Profil */}
           <div style={{ marginBottom: 16 }}>
-            <label className="form-label">
-              Gambar Profil (.jpg, maks 50KB)
-            </label>
-            <label
+            <label className="form-label">Gambar Profil (maks 50KB)</label>
+            {/* <label
               className="upload-zone"
               style={{
                 display: "flex",
@@ -1024,7 +1042,16 @@ function StafForm({
                 onChange={handleImageChange}
                 style={{ display: "none" }}
               />
-            </label>
+            </label> */}
+            <PhotoUpload
+              id={editData?.IDGuru ? String(editData.IDGuru) : idGuru}
+              type="staf"
+              currentUrl={fotoUrl}
+              onUploadComplete={(url) => {
+                setFotoUrl(url);
+                setPreviewUrl(url);
+              }}
+            />
           </div>
 
           {/* Alamat */}
@@ -1134,7 +1161,7 @@ function StafDetailModal({
     .join("")
     .toUpperCase();
 
-  const avatarUrl = `/img/${staf.IDGuru}.jpg`;
+  const avatarUrl = staf.FotoURL;
 
   return (
     <div className="modal-overlay">
@@ -1193,21 +1220,26 @@ function StafDetailModal({
               marginBottom: 24,
             }}
           >
-            <img
-              src={avatarUrl}
-              alt={staf.NamaGuru}
-              style={{
-                width: 80,
-                height: 80,
-                borderRadius: 16,
-                objectFit: "cover",
-                border: "3px solid white",
-              }}
-              onError={(e) => {
-                e.currentTarget.style.display = "none";
-              }}
-            />
-
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt={staf.NamaGuru}
+                style={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: 16,
+                  objectFit: "cover",
+                  border: "3px solid white",
+                }}
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                }}
+              />
+            ) : (
+              <div className="avatar-circle" style={{ display: "none" }}>
+                {initials}
+              </div>
+            )}
             <div>
               <h3
                 style={{

@@ -4,6 +4,7 @@ import GuruSidebar from "@/app/components/GuruSidebar";
 import { supabase } from "@/lib/supabase";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { IconPlus } from "@/app/components/icons";
 
 type Pelajar = {
   IDPelajar: number;
@@ -267,15 +268,17 @@ export default function GuruDashboard() {
             <div className="flex justify-end gap-3 mb-6">
               <button
                 onClick={() => router.push("/staf/rekod-hafazan/tambah")}
-                className="bg-blue-900 text-white px-6 py-2 rounded shadow-md text-sm font-medium hover:bg-blue-800 transition-colors w-auto"
+                className="add-btn"
               >
-                + Tambah Rekod Hafazan
+                <IconPlus />
+                <span>Tambah Rekod Hafazan</span>
               </button>
               <button
                 onClick={() => router.push("/staf/rekod-murajaah/tambah")}
-                className="bg-blue-900 text-white px-6 py-2 rounded shadow-md text-sm font-medium hover:bg-blue-800 transition-colors w-auto"
+                className="add-btn"
               >
-                + Tambah Rekod Murajaah
+                <IconPlus />
+                <span>Tambah Rekod Murajaah</span>
               </button>
             </div>
 
@@ -289,7 +292,7 @@ export default function GuruDashboard() {
                   Jumlah Pelajar: {pelajarList.length}
                 </span>
               </div>
-              <table className="w-full text-sm">
+              <table className="data-table">
                 <thead className="bg-gray-50 border-b">
                   <tr>
                     <th className="text-left px-4 py-3 font-semibold text-gray-600">
@@ -328,8 +331,54 @@ export default function GuruDashboard() {
                         key={pelajar.IDPelajar}
                         className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
                       >
-                        <td className="px-4 py-3 text-gray-700">
-                          {pelajar.NamaPelajar}
+                        <td style={{ paddingLeft: 20 }}>
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 10,
+                            }}
+                          >
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 10,
+                              }}
+                            >
+                              <img
+                                src={`/img/${pelajar.IDPelajar}.jpg`}
+                                alt={pelajar.NamaPelajar}
+                                className="avatar-circle border-4 border-blue-800 rounded-full"
+                                style={{
+                                  padding: 0,
+                                  objectFit: "cover",
+                                  border: "2px solid #1e40af",
+                                }}
+                                onError={(e) => {
+                                  (
+                                    e.currentTarget as HTMLImageElement
+                                  ).style.display = "none";
+                                  (e.currentTarget
+                                    .nextElementSibling as HTMLElement)!.style.display =
+                                    "flex";
+                                }}
+                              />
+                              <div
+                                className="avatar-circle"
+                                style={{ display: "none" }}
+                              >
+                                {pelajar.NamaPelajar.split("")
+                                  .slice(0, 2)
+                                  .map((w) => w[0])
+                                  .join("")
+                                  .toUpperCase()}
+                              </div>
+                            </div>
+                            <span style={{ fontWeight: 600, color: "#1e293b" }}>
+                              {pelajar.NamaPelajar}
+                            </span>
+                          </div>
                         </td>
                         <td className="px-4 py-3 text-gray-600">
                           {pelajar.Kelas}
@@ -353,7 +402,7 @@ export default function GuruDashboard() {
                             onClick={() =>
                               (window.location.href = `/staf/dashboard/rekod-kemajuan?id=${pelajar.IDPelajar}`)
                             }
-                            className="bg-blue-900 text-white px-3 py-1 rounded text-xs hover:bg-blue-800"
+                            className="table-action-btn table-action-view"
                           >
                             Papar Rekod
                           </button>

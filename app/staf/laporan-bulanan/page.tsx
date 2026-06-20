@@ -210,11 +210,11 @@ export default function LaporanBulanan() {
                     <td className="px-4 py-3">
                       {pelajar.selesai ? (
                         <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-semibold">
-                          ✅ Selesai
+                          Selesai
                         </span>
                       ) : (
                         <span className="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-semibold">
-                          ❌ Belum Selesai
+                          Belum Selesai
                         </span>
                       )}
                     </td>

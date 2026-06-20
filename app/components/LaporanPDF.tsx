@@ -308,6 +308,7 @@ type LaporanPDFProps = {
   statusHafazan: string;
   ulasanGuru: string;
   rekodList: RekodRow[];
+  logoSrc?: string; // ✅ add this
 };
 
 const MONTH_OPTIONS = [
@@ -362,6 +363,7 @@ export default function LaporanPDF({
   statusHafazan,
   ulasanGuru,
   rekodList,
+  logoSrc,
 }: LaporanPDFProps) {
   // Build flat rows for table
   const tableRows: {
@@ -421,10 +423,8 @@ export default function LaporanPDF({
             </Text>
           </View>
           <View style={styles.headerRight}>
-            <Image
-              style={styles.logo}
-              src={`${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/lencana.jpg`}
-            />
+            {logoSrc && <Image style={styles.logo} src={logoSrc} />}
+
             <View style={styles.schoolInfo}>
               <Text style={styles.schoolName}>SMK AGAMA BANGI</Text>
               <Text style={styles.schoolAddress}>
