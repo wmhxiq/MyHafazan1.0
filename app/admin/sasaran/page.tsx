@@ -696,7 +696,7 @@ export default function SasaranPage() {
                         relative flex flex-col items-center justify-center py-1.5 px-1 rounded-md text-xs font-medium transition-all duration-150
                         ${
                           isInherited
-                            ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
+                            ? "bg-gray-300 text-gray-600 cursor-not-allowed border border-gray-400"
                             : isSelected
                               ? "bg-blue-600 text-white border border-blue-600 shadow-sm"
                               : "bg-white text-gray-700 border border-gray-200 hover:border-blue-300 hover:bg-blue-50"

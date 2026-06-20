@@ -523,7 +523,7 @@ function KelasForm({
             value={namaKelas}
             onChange={(e) => setNamaKelas(e.target.value)}
             disabled={!!editData}
-            placeholder="cth: 1 Ibnu Khaldun"
+            placeholder="cth: 1 IBNU KHALDUN"
             className={`w-full border rounded px-3 py-2 text-sm text-gray-600 ${
               editData ? "bg-gray-100 cursor-not-allowed" : ""
             }`}

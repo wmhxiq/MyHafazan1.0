@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { IconPlus, IconUpload } from "./icons";
 import { useDropzone } from "react-dropzone";
+import AlertModal from "./AlertModal";
 
 type PhotoUploadProps = {
   id: string;
@@ -19,20 +20,74 @@ export default function PhotoUpload({
   const [preview, setPreview] = useState(currentUrl || "");
   const [uploading, setUploading] = useState(false);
 
+  // 1. ADD MODAL STATE HERE
+  const [modalConfig, setModalConfig] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "info" as "info" | "success" | "error" | "warning",
+    confirmText: "OK",
+    cancelText: "Batal",
+    onConfirm: undefined as (() => void) | undefined,
+    showCancel: false,
+    autoClose: false,
+    autoCloseDuration: 5000,
+  });
+
+  // 2. ADD TRIGGER FUNCTION HERE
+  const triggerAlert = (
+    title: string,
+    message: string,
+    type: "info" | "success" | "error" | "warning" = "info",
+    options?: {
+      confirmText?: string;
+      cancelText?: string;
+      showCancel?: boolean;
+      onConfirm?: () => void;
+      autoClose?: boolean;
+      autoCloseDuration?: number;
+    },
+  ) => {
+    setModalConfig({
+      isOpen: true,
+      title,
+      message,
+      type,
+      confirmText: options?.confirmText || "OK",
+      cancelText: options?.cancelText || "Batal",
+      onConfirm: options?.onConfirm,
+      showCancel: options?.showCancel || false,
+      autoClose: options?.autoClose || false,
+      autoCloseDuration: options?.autoCloseDuration || 5000,
+    });
+  };
+
+  // 3. ADD CLOSE FUNCTION HERE
+  const closeModal = () => {
+    setModalConfig((prev) => ({ ...prev, isOpen: false }));
+  };
+
   const processFile = async (file: File) => {
     //const file = e.target.files?.[0];
     if (!file) return;
 
     // Validate file type
     if (!file.type.startsWith("image/")) {
-      alert("Sila pilih fail imej (JPG/PNG)");
+      triggerAlert("Gagal!", "Sila pilih fail imej (JPG/PNG).", "error", {
+        autoClose: true,
+        autoCloseDuration: 3000,
+      });
       return;
     }
 
     // Validate file size (max 50KB)
     if (file.size > 50 * 1024) {
-      alert("Saiz fail terlalu besar. Maksimum 50KB.");
-      return;
+      triggerAlert(
+        "Gagal!",
+        "Saiz fail terlalu besar. Maksimum 50KB.",
+        "error",
+        { autoClose: true, autoCloseDuration: 3000 },
+      );
     }
 
     // Show local preview immediately
@@ -57,14 +112,21 @@ export default function PhotoUpload({
       console.log(data.url);
 
       if (data.error) {
-        alert("Gagal memuat naik: " + data.error);
+        triggerAlert("Gagal!", "Gagal memuat naik: " + data.error, "error", {
+          autoClose: true,
+          autoCloseDuration: 3000,
+        });
+
         setUploading(false);
         return;
       }
 
       onUploadComplete(data.url);
     } catch (err) {
-      alert("Ralat semasa memuat naik gambar");
+      triggerAlert("Gagal!", "Ralat semasa memuat naik gambar", "error", {
+        autoClose: true,
+        autoCloseDuration: 3000,
+      });
     }
 
     setUploading(false);
@@ -74,7 +136,7 @@ export default function PhotoUpload({
     noClick: true,
     multiple: false,
     maxFiles: 1,
-    maxSize: 5 * 1024 * 1024,
+    maxSize: 50 * 1024,
 
     accept: {
       "image/jpeg": [],
@@ -86,7 +148,12 @@ export default function PhotoUpload({
     },
 
     onDropRejected: () => {
-      alert("Hanya JPG, PNG, WEBP dibenarkan. Maksimum 5MB.");
+      triggerAlert(
+        "Gagal!",
+        "Hanya JPG, PNG dibenarkan. Maksimum 50KB.",
+        "error",
+        { autoClose: true, autoCloseDuration: 3000 },
+      );
     },
   });
 
@@ -150,7 +217,7 @@ export default function PhotoUpload({
             </p>
 
             <p className="mt-2 text-xs text-gray-400">
-              JPG, JPEG, PNG • Maksimum 5MB
+              JPG, JPEG, PNG • Maksimum 50KB
             </p>
           </div>
 
@@ -166,6 +233,19 @@ export default function PhotoUpload({
           )}
         </div>
       </div>
+      <AlertModal
+        isOpen={modalConfig.isOpen}
+        onClose={closeModal}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        type={modalConfig.type}
+        confirmText={modalConfig.confirmText}
+        cancelText={modalConfig.cancelText}
+        onConfirm={modalConfig.onConfirm}
+        showCancel={modalConfig.showCancel}
+        autoClose={modalConfig.autoClose}
+        autoCloseDuration={modalConfig.autoCloseDuration}
+      />
     </div>
   );
 }

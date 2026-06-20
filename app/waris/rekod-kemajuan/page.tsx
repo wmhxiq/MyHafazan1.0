@@ -912,7 +912,7 @@ export default function WarisRekodKemajuan() {
               {ulasanBulanan ? (
                 <div className="bg-slate-50 border border-slate-200/60 rounded-2xl p-5">
                   <p className="text-sm text-slate-700 leading-relaxed font-medium">
-                    "{ulasanBulanan.Ulasan}"
+                    {ulasanBulanan.Ulasan}
                   </p>
                   <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-200/60 text-xs text-slate-400 font-semibold">
                     <span>

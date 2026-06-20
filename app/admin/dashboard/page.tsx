@@ -658,7 +658,7 @@ export default function AdminDashboard() {
                     </div>
                     <div>
                       <h2 className="text-base font-semibold text-gray-900">
-                        Prestasi Keseluruhan
+                        Prestasi Keseluruhan Bulan Semasa
                       </h2>
                       <p className="text-xs text-gray-500 mt-0.5">
                         Berdasarkan rekod hafazan terkini
@@ -771,7 +771,7 @@ export default function AdminDashboard() {
                   </div>
                   <div>
                     <h2 className="text-sm font-semibold text-gray-900">
-                      Statistik Mengikut Tingkatan
+                      Statistik Mengikut Tingkatan Bulan Semasa
                     </h2>
                     <p className="text-xs text-gray-500 mt-0.5">
                       Agihan pencapaian hafazan mengikut tingkatan

@@ -434,7 +434,11 @@ function LaporanPelajarContent({
               <PDFDownloadLink
                 document={
                   <LaporanPDF
-                    logoSrc={`${process.env.NEXT_PUBLIC_DO_SPACES_CDN_URL}/lencana.jpg`}
+                    logoSrc={
+                      process.env.DO_SPACES_CDN_URL
+                        ? `${process.env.DO_SPACES_CDN_URL}/lencana.jpg`
+                        : "/lencana.jpg" // fallback to local public folder
+                    }
                     namaMurid={pelajarInfo.NamaPelajar}
                     noKP={String(pelajarInfo.IDPelajar)}
                     kelas={pelajarInfo.Kelas}

@@ -309,9 +309,9 @@ function TambahRekodContent() {
               onClick={() => setShowPreviousPages(!showPreviousPages)}
               className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1 transition-colors"
             >
-              <span>
+              {/* <span>
                 {showPreviousPages ? "Sembunyi" : "Tunjuk"} mukasurat lepas
-              </span>
+              </span> */}
               <svg
                 className={`w-4 h-4 transition-transform ${showPreviousPages ? "rotate-180" : ""}`}
                 fill="none"
