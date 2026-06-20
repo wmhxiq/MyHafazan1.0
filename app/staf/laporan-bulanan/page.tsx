@@ -12,6 +12,7 @@ type PelajarLaporan = {
   Kelas: string;
   selesai: boolean;
   jumlahRekod: number;
+  FotoURL: string;
 };
 
 const MONTH_OPTIONS = [
@@ -54,7 +55,7 @@ export default function LaporanBulanan() {
     // 1. Get all students under this guru
     const { data: pelajarData } = await supabase
       .from("Pelajar")
-      .select("IDPelajar, NamaPelajar, Kelas")
+      .select("IDPelajar, NamaPelajar, Kelas, FotoURL")
       .eq("IDGuru", idGuru)
       .order("NamaPelajar");
 
@@ -200,8 +201,57 @@ export default function LaporanBulanan() {
                     key={pelajar.IDPelajar}
                     className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
                   >
-                    <td className="px-4 py-3 text-gray-700">
-                      {pelajar.NamaPelajar}
+                    <td style={{ paddingLeft: 20 }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 10,
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 10,
+                          }}
+                        >
+                          {pelajar.FotoURL ? (
+                            <img
+                              src={pelajar.FotoURL}
+                              alt={pelajar.NamaPelajar}
+                              className="avatar-circle border-4 border-blue-800 rounded-full"
+                              style={{
+                                padding: 0,
+                                objectFit: "cover",
+                                border: "2px solid #1e40af",
+                              }}
+                              onError={(e) => {
+                                (
+                                  e.currentTarget as HTMLImageElement
+                                ).style.display = "none";
+                                (e.currentTarget
+                                  .nextElementSibling as HTMLElement)!.style.display =
+                                  "flex";
+                              }}
+                            />
+                          ) : (
+                            <div
+                              className="avatar-circle"
+                              // style={{ display: "none" }}
+                            >
+                              {pelajar.NamaPelajar.split("")
+                                .slice(0, 2)
+                                .map((w) => w[0])
+                                .join("")
+                                .toUpperCase()}
+                            </div>
+                          )}
+                        </div>
+                        <span style={{ fontWeight: 600, color: "#1e293b" }}>
+                          {pelajar.NamaPelajar}
+                        </span>
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-gray-600">{pelajar.Kelas}</td>
                     <td className="px-4 py-3 text-gray-600">

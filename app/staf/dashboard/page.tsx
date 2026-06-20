@@ -15,6 +15,7 @@ type Pelajar = {
   jumlahJuzuk: number;
   status: string;
   sasaranJuzukTingkatan: number;
+  FotoURL: string;
 };
 
 type DashboardStats = {
@@ -52,7 +53,7 @@ export default function GuruDashboard() {
     // 1. Get all students under this guru
     const { data: pelajarData } = await supabase
       .from("Pelajar")
-      .select("IDPelajar, NamaPelajar, Kelas")
+      .select("IDPelajar, NamaPelajar, Kelas, FotoURL")
       .eq("IDGuru", idGuru)
       .order("NamaPelajar");
 
@@ -346,34 +347,37 @@ export default function GuruDashboard() {
                                 gap: 10,
                               }}
                             >
-                              <img
-                                src={`/img/${pelajar.IDPelajar}.jpg`}
-                                alt={pelajar.NamaPelajar}
-                                className="avatar-circle border-4 border-blue-800 rounded-full"
-                                style={{
-                                  padding: 0,
-                                  objectFit: "cover",
-                                  border: "2px solid #1e40af",
-                                }}
-                                onError={(e) => {
-                                  (
-                                    e.currentTarget as HTMLImageElement
-                                  ).style.display = "none";
-                                  (e.currentTarget
-                                    .nextElementSibling as HTMLElement)!.style.display =
-                                    "flex";
-                                }}
-                              />
-                              <div
-                                className="avatar-circle"
-                                style={{ display: "none" }}
-                              >
-                                {pelajar.NamaPelajar.split("")
-                                  .slice(0, 2)
-                                  .map((w) => w[0])
-                                  .join("")
-                                  .toUpperCase()}
-                              </div>
+                              {pelajar.FotoURL ? (
+                                <img
+                                  src={pelajar.FotoURL}
+                                  alt={pelajar.NamaPelajar}
+                                  className="avatar-circle border-4 border-blue-800 rounded-full"
+                                  style={{
+                                    padding: 0,
+                                    objectFit: "cover",
+                                    border: "2px solid #1e40af",
+                                  }}
+                                  onError={(e) => {
+                                    (
+                                      e.currentTarget as HTMLImageElement
+                                    ).style.display = "none";
+                                    (e.currentTarget
+                                      .nextElementSibling as HTMLElement)!.style.display =
+                                      "flex";
+                                  }}
+                                />
+                              ) : (
+                                <div
+                                  className="avatar-circle"
+                                  // style={{ display: "none" }}
+                                >
+                                  {pelajar.NamaPelajar.split("")
+                                    .slice(0, 2)
+                                    .map((w) => w[0])
+                                    .join("")
+                                    .toUpperCase()}
+                                </div>
+                              )}
                             </div>
                             <span style={{ fontWeight: 600, color: "#1e293b" }}>
                               {pelajar.NamaPelajar}
