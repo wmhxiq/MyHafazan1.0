@@ -147,22 +147,26 @@ function TambahRekodContent() {
         });
       }
 
-      // Map students to rows with combined data
+      // In fetchAllData function, change the rows mapping to this:
+
       const rows: RekodRow[] = pelajarData.map((pelajar) => {
         const existing = existingRekod.find(
           (r) => r.IDPelajar === pelajar.IDPelajar,
         );
         const latestRecord = latestRecordMap.get(pelajar.IDPelajar);
 
+        // Calculate default HBmula value
+        const defaultHBmula = existing?.HBmula
+          ? String(existing.HBmula)
+          : latestRecord
+            ? String(latestRecord.HBakhir + 1) // Set as actual value, not placeholder
+            : "";
+
         return {
           IDPelajar: pelajar.IDPelajar,
           NamaPelajar: pelajar.NamaPelajar,
           Kelas: pelajar.Kelas,
-          HBmula: existing?.HBmula
-            ? String(existing.HBmula)
-            : latestRecord
-              ? String(latestRecord.HBakhir + 1)
-              : "",
+          HBmula: defaultHBmula, // This will now be the actual value
           HBakhir: existing?.HBakhir ? String(existing.HBakhir) : "",
           Pencapaian: existing?.Pencapaian || "Baik",
           rekodID: existing?.RekodID,
@@ -194,10 +198,10 @@ function TambahRekodContent() {
   function usePreviousAsStart(index: number) {
     setRekodRows((prev) =>
       prev.map((row, i) => {
-        if (i === index && row.previousHBakhir) {
+        if (i === index && row.previousHBakhir != null) {
           return {
             ...row,
-            HBmula: String(row.previousHBakhir + 1),
+            HBmula: String(Number(row.previousHBakhir) + 1),
           };
         }
         return row;
@@ -470,11 +474,7 @@ function TambahRekodContent() {
                             onChange={(e) =>
                               updateRow(index, "HBmula", e.target.value)
                             }
-                            placeholder={
-                              row.previousHBakhir
-                                ? String(row.previousHBakhir + 1)
-                                : "0"
-                            }
+                            placeholder="0" // Static placeholder only as fallback
                             className={`border rounded px-2 py-1 w-20 text-sm text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none ${
                               row.previousHBakhir && !row.HBmula
                                 ? "border-yellow-400 bg-yellow-50"

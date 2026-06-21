@@ -138,7 +138,7 @@ export default function ViewRekodMurajaah({
         {/* Summary */}
         <div className="grid grid-cols-3 gap-4 mb-6">
           <div className="bg-white rounded-lg shadow p-4 text-center">
-            <p className="text-xs text-gray-500">Jumlah Pelajar</p>
+            <p className="text-xs text-gray-500">Jumlah Rekod</p>
             <p className="text-2xl font-bold text-blue-900">
               {rekodList.length}
             </p>
