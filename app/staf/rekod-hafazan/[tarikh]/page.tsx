@@ -4,6 +4,7 @@ import GuruSidebar from "@/app/components/GuruSidebar";
 import { supabase } from "@/lib/supabase";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { IconEdit } from "@/app/components/icons";
 
 type RekodDetail = {
   RekodID: number;
@@ -116,10 +117,12 @@ export default function ViewRekodHafazan({
               onClick={() =>
                 router.push(`/staf/rekod-hafazan/tambah?tarikh=${tarikh}`)
               }
-              className="bg-blue-100 text-blue-700 px-4 py-2 rounded text-sm hover:bg-blue-200"
+              className="btn-save"
             >
-              ✏️ Kemaskini
+              <IconEdit />
+              Kemaskini
             </button>
+
             <button
               onClick={() => router.back()}
               className="bg-gray-200 text-gray-700 px-4 py-2 rounded text-sm hover:bg-gray-300"
@@ -209,7 +212,10 @@ export default function ViewRekodHafazan({
                     <td className="px-4 py-3 text-gray-600">{rekod.HBmula}</td>
                     <td className="px-4 py-3 text-gray-600">{rekod.HBakhir}</td>
                     <td className="px-4 py-3 text-gray-600 font-medium">
-                      {Math.max(0, (rekod.HBakhir || 0) - (rekod.HBmula || 0))}{" "}
+                      {Math.max(
+                        0,
+                        (rekod.HBakhir || 0) - (rekod.HBmula || 0) + 1,
+                      )}{" "}
                       muka
                     </td>
                     <td className="px-4 py-3">

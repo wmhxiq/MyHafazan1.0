@@ -21,6 +21,9 @@ const plusJakarta = Plus_Jakarta_Sans({
 export const metadata: Metadata = {
   title: "MyHafazan",
   description: "Sistem Pengurusan Hafazan SMK Agama Bangi'",
+  icons: {
+    icon: "/lencananobg.png",
+  },
 };
 
 export default function RootLayout({

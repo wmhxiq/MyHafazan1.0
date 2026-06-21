@@ -275,7 +275,7 @@ export default function LaporanBulanan() {
                             `/staf/laporan-bulanan/${pelajar.IDPelajar}?bulan=${selectedMonth + 1}&tahun=${selectedYear}`,
                           )
                         }
-                        className="bg-blue-900 text-white px-3 py-1 rounded text-xs hover:bg-blue-800"
+                        className="table-action-btn table-action-view"
                       >
                         Papar Rekod
                       </button>

@@ -840,10 +840,7 @@ function LaporanPelajarContent({
 
             {/* Save Button */}
             <div className="flex justify-center gap-4 pt-4 border-t">
-              <button
-                onClick={() => router.back()}
-                className="bg-gray-200 text-gray-700 px-6 py-2 rounded hover:bg-gray-300 text-sm"
-              >
+              <button onClick={() => router.back()} className="btn-cancel">
                 BATAL
               </button>
               <button

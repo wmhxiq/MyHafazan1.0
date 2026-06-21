@@ -5,7 +5,7 @@ import MonthPicker from "@/app/components/MonthPicker";
 import { supabase } from "@/lib/supabase";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { IconEdit, IconTrash } from "@/app/components/icons";
+import { IconEdit, IconPlus, IconTrash } from "@/app/components/icons";
 
 type RekodGroup = {
   Tarikh: string;
@@ -91,7 +91,6 @@ export default function RekodMurajaahList() {
   }
 
   async function deleteRekod(tarikh: string) {
-    const { data: session } = useSession();
     if (!session) return;
     const confirm = window.confirm(
       `Adakah anda pasti mahu memadam semua rekod pada ${formatTarikh(tarikh)}?`,
@@ -143,9 +142,10 @@ export default function RekodMurajaahList() {
           </div>
           <button
             onClick={() => router.push("/staf/rekod-murajaah/tambah")}
-            className="bg-blue-900 text-white px-4 py-2 rounded text-sm hover:bg-blue-800"
+            className="add-btn"
           >
-            + Tambah Rekod
+            <IconPlus />
+            <span>Tambah Rekod</span>
           </button>
         </div>
 
@@ -204,27 +204,11 @@ export default function RekodMurajaahList() {
                         onClick={() =>
                           router.push(`/staf/rekod-murajaah/${rekod.Tarikh}`)
                         }
-                        className="bg-blue-900 text-white px-3 py-1 rounded text-xs hover:bg-blue-800"
+                        className="table-action-btn table-action-view"
                       >
                         Papar Rekod
                       </button>
-                      {/* <button
-                        onClick={() =>
-                          router.push(
-                            `/staf/rekod-murajaah/tambah?tarikh=${rekod.Tarikh}`,
-                          )
-                        }
-                        className="bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200 text-xs"
-                      >
-                        ✏️
-                      </button>
 
-                      <button
-                        onClick={() => deleteRekod(rekod.Tarikh)}
-                        className="bg-red-100 text-red-700 px-2 py-1 rounded hover:bg-red-200 text-xs"
-                      >
-                        🗑️
-                      </button> */}
                       {/* Edit */}
                       <button
                         onClick={() =>

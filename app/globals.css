@@ -123,7 +123,7 @@ body {
 .btn-cancel {
   padding: 10px 20px;
   border-radius: 10px;
-  border: 1.5px solid #e2e8f0;
+  border: 1.5px solid #94a3b8;
   background: white;
   color: #475569;
   font-size: 13px;
@@ -161,6 +161,39 @@ body {
   cursor: not-allowed;
   transform: none;
 }
+
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: 1px solid #64748b;
+
+  background: white;
+  color: #334155;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.btn-back:hover {
+  background: #f8fafc;
+  border-color: #334155;
+  transform: translateY(-1px);
+}
+
+.btn-back:active {
+  transform: translateY(0);
+}
+
+
 
 /* ─── Modal ───────────────────────────────────────────────── */
 
