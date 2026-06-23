@@ -18,11 +18,25 @@ const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
 });
 
+const spacesUrl = process.env.DO_SPACES_CDN_URL;
+
 export const metadata: Metadata = {
   title: "MyHafazan",
   description: "Sistem Pengurusan Hafazan SMK Agama Bangi'",
   icons: {
     icon: "/lencananobg.png",
+  },
+  openGraph: {
+    title: "MyHafazan",
+    description: "Sistem Pengurusan Hafazan SMK Agama Bangi",
+    images: [
+      {
+        url: `${spacesUrl}/og-image.png`,
+        width: 1200,
+        height: 630,
+        alt: "MyHafazan",
+      },
+    ],
   },
 };
 

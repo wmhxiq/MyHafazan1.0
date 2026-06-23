@@ -144,9 +144,7 @@ export default function ViewRekodMurajaah({
             </p>
           </div>
           <div className="bg-white rounded-lg shadow p-4 text-center">
-            <p className="text-xs text-gray-500">
-              Jumlah Muka Surat (Kumpulan)
-            </p>
+            <p className="text-xs text-gray-500">Pelajar Terbaik Harian</p>
             <p className="text-2xl font-bold text-blue-900">
               {rekodList.reduce(
                 (sum, r) =>
